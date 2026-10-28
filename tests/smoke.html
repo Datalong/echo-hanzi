@@ -43,7 +43,7 @@ async function waitReady(frame, url) {
       const w = frame.contentWindow;
       if (d.documentElement.getAttribute('data-app-ready') === '1' &&
           d.querySelector('#pinyin .ch') &&
-          w && w.Srs && w.Stats && w.Strokes) {
+          w && w.Srs && w.Stats && w.Strokes && w.Ime) {
         return d;
       }
       await sleep(20);
@@ -437,6 +437,38 @@ window.onload = async () => {
   doc.getElementById('btn-stroke-close').click();
   await sleep(150);
   ok('笔顺：点击关闭按钮关闭', doc.getElementById('stroke-modal').hidden);
+
+  // ---------- 真实中文输入法 (IME 模式) ----------
+  ok('输入法：Ime 模块可用', typeof win.Ime === 'object' && typeof win.Ime.queryCandidates === 'function');
+  const cands = win.Ime.queryCandidates('zhong', '中');
+  ok('输入法：候选词查询正常', Array.isArray(cands) && cands.length > 0 && cands[0] === '中', '首选 = ' + cands[0]);
+
+  // 开启输入法模式
+  doc.getElementById('tg-ime').click();
+  await sleep(200);
+  ok('输入法：按钮处于按下状态', doc.getElementById('tg-ime').getAttribute('aria-pressed') === 'true');
+  ok('输入法：顶栏提示输入法模式', /输入法/.test(doc.getElementById('run-mode').textContent), doc.getElementById('run-mode').textContent);
+
+  // 输入拼音字母，校验悬浮候选框弹出
+  typeChars(win, 'zhong');
+  await sleep(150);
+  ok('输入法：敲字母弹出候选框', !doc.getElementById('ime-popup').hidden);
+  ok('输入法：拼音 buffer 正确显示', doc.getElementById('ime-buffer').textContent === 'zhong', doc.getElementById('ime-buffer').textContent);
+  ok('输入法：候选词项渲染', doc.querySelectorAll('#ime-candidates .ime-cand-item').length > 0,
+     doc.querySelectorAll('#ime-candidates .ime-cand-item').length + ' 候选词');
+
+  // 按空格键上屏首选词
+  const beforeImePos = doc.getElementById('run-pos').textContent;
+  const catcherEl = doc.getElementById('catcher');
+  catcherEl.dispatchEvent(new win.KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+  await sleep(350);
+
+  ok('输入法：空格选词后候选框关闭', doc.getElementById('ime-popup').hidden);
+
+  // 切回常规拼音模式，确认功能还原
+  doc.getElementById('tg-ime').click();
+  await sleep(150);
+  ok('输入法：切回直打模式', doc.getElementById('tg-ime').getAttribute('aria-pressed') === 'false');
 
   // ---------- PWA 离线能力 ----------
   const mRes = await fetch('../manifest.json');

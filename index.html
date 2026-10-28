@@ -54,6 +54,9 @@
       <button class="toggle" id="tg-tones" type="button" aria-pressed="false" title="要求输入声调数字，如 ni3hao3">
         声调
       </button>
+      <button class="toggle" id="tg-ime" type="button" aria-pressed="false" title="开启真实中文输入法：弹候选框，按空格/数字选字上屏">
+        输入法
+      </button>
       <button class="toggle" id="tg-echo" type="button" aria-pressed="false" title="隐藏汉字与拼音，只听音辨义">
         听音
       </button>
@@ -89,6 +92,16 @@
       <div class="sentence" id="sentence" lang="zh-Hans" hidden></div>
       <div class="english" id="english">hello</div>
       <button class="ghost-btn" id="btn-reveal" type="button" hidden>显示答案</button>
+
+      <!-- 真实中文输入法悬浮候选框 -->
+      <div class="ime-popup" id="ime-popup" hidden>
+        <div class="ime-buffer" id="ime-buffer"></div>
+        <div class="ime-candidates" id="ime-candidates"></div>
+        <div class="ime-pager">
+          <span class="ime-page-info" id="ime-page-info">1/1</span>
+          <span class="ime-pager-hint">- / = 翻页</span>
+        </div>
+      </div>
     </section>
 
     <div class="stats">
@@ -237,6 +250,7 @@
 <script src="pinyin.js"></script>
 <script src="data.js"></script>
 <script src="audio.js"></script>
+<script src="ime.js"></script>
 <script src="strokes.js"></script>
 <script src="srs.js"></script>
 <script src="stats.js"></script>

@@ -17,6 +17,7 @@
     level: 'hsk1',
     count: 20,
     tones: false,
+    ime: false,
     echo: false,
     speech: true,
     sound: true,
@@ -28,6 +29,11 @@
     level: $('sel-level'),
     count: $('sel-count'),
     tones: $('tg-tones'),
+    ime: $('tg-ime'),
+    imePopup: $('ime-popup'),
+    imeBuffer: $('ime-buffer'),
+    imeCandidates: $('ime-candidates'),
+    imePageInfo: $('ime-page-info'),
     echo: $('tg-echo'),
     speech: $('tg-speech'),
     sound: $('tg-sound'),
@@ -118,7 +124,10 @@
     strokeOpen: false,
     strokeIndex: 0,
     strokePaths: [],
-    strokeTimer: null
+    strokeTimer: null,
+    imeBufferText: '',
+    imePage: 0,
+    imeList: []
   };
   var srsDb = window.Srs ? window.Srs.load() : {};
   var srsSaveTimer = null;
@@ -153,6 +162,7 @@
     els.level.value = settings.level;
     els.count.value = String(settings.count);
     setPressed(els.tones, settings.tones);
+    setPressed(els.ime, settings.ime);
     setPressed(els.echo, settings.echo);
     setPressed(els.speech, settings.speech);
     setPressed(els.sound, settings.sound);
@@ -648,6 +658,7 @@
     els.runPos.textContent = Math.min(state.index + 1, total) + ' / ' + total + ' ' + runUnit();
     els.runLevel.textContent = item ? item.level : settings.level.toUpperCase();
     var modes = [];
+    if (settings.ime) modes.push('输入法');
     if (settings.tones) modes.push('含声调');
     if (settings.echo) modes.push('听音模式');
     if (isSentenceMode()) modes.push('句型');
@@ -725,6 +736,135 @@
     if (settings.sound) window.Sound.click();
   }
 
+
+  /* ---------------- 真实输入法 (IME) 核心 ---------------- */
+
+  var IME_PAGE_SIZE = 5;
+
+  function closeImePopup() {
+    state.imeBufferText = '';
+    state.imePage = 0;
+    state.imeList = [];
+    if (els.imePopup) els.imePopup.hidden = true;
+  }
+
+  function getTargetCharForIme() {
+    var item = currentItem();
+    if (!item) return '';
+    if (!isSentenceMode()) {
+      return item.hanzi;
+    }
+    for (var i = 0; i < state.chars.length; i++) {
+      var c = state.chars[i];
+      if (!c.punct && state.pos >= c.start && state.pos < c.end) {
+        return c.text;
+      }
+    }
+    return '';
+  }
+
+  function renderImePopup() {
+    if (!els.imePopup || !settings.ime) return;
+    if (!state.imeBufferText) {
+      els.imePopup.hidden = true;
+      return;
+    }
+
+    var target = getTargetCharForIme();
+    var list = window.Ime.queryCandidates(state.imeBufferText, target);
+    state.imeList = list;
+
+    var totalPages = Math.max(1, Math.ceil(list.length / IME_PAGE_SIZE));
+    if (state.imePage >= totalPages) state.imePage = totalPages - 1;
+    if (state.imePage < 0) state.imePage = 0;
+
+    var start = state.imePage * IME_PAGE_SIZE;
+    var pageItems = list.slice(start, start + IME_PAGE_SIZE);
+
+    els.imeBuffer.textContent = state.imeBufferText;
+    els.imeCandidates.textContent = '';
+
+    pageItems.forEach(function (cand, idx) {
+      var item = document.createElement('span');
+      item.className = 'ime-cand-item' + (idx === 0 ? ' is-first' : '');
+
+      var num = span('ime-cand-num', (idx + 1) + '.');
+      var txt = span('ime-cand-text', cand);
+      item.appendChild(num);
+      item.appendChild(txt);
+
+      item.addEventListener('click', function () {
+        chooseImeCandidate(cand);
+      });
+      els.imeCandidates.appendChild(item);
+    });
+
+    els.imePageInfo.textContent = (state.imePage + 1) + '/' + totalPages;
+    els.imePopup.hidden = false;
+  }
+
+  function chooseImeCandidate(cand) {
+    if (!cand) return;
+    var target = getTargetCharForIme();
+    var isCorrect = (cand === target);
+
+    if (isCorrect) {
+      // 正确上屏：推进当前字/词的所有 cell
+      state.correctKeys++;
+      state.streak++;
+      state.bestStreak = Math.max(state.bestStreak, state.streak);
+      playClick();
+
+      // 将对应字所有的 cell 标记为 ok
+      if (!isSentenceMode()) {
+        state.cells.forEach(function (c) { c.ok = true; });
+        state.pos = state.cells.length;
+        completeItem();
+      } else {
+        // 句模式：找到当前字对应的所有 cells 标记为 ok，并推进 pos
+        var curChar = null;
+        for (var i = 0; i < state.chars.length; i++) {
+          var c = state.chars[i];
+          if (!c.punct && state.pos >= c.start && state.pos < c.end) {
+            curChar = c;
+            break;
+          }
+        }
+        if (curChar) {
+          for (var j = curChar.start; j < curChar.end; j++) {
+            state.cells[j].ok = true;
+          }
+          state.pos = curChar.end;
+          paint();
+          updateRunLine();
+          // 如果下一个是标点，不自动跳过，等待用户敲击真实标点键
+          if (state.pos >= state.cells.length) {
+            completeItem();
+          }
+        }
+      }
+    } else {
+      // 选错候选词（同音字辨析失败）
+      state.errorKeys++;
+      state.wordHadError = true;
+      state.streak = 0;
+      if (settings.sound) window.Sound.error();
+
+      var cell = state.cells[state.pos];
+      if (cell) {
+        cell.err = true;
+        paint();
+        setTimeout(function () {
+          cell.err = false;
+          paint();
+        }, 220);
+      }
+    }
+
+    closeImePopup();
+    updateStats();
+  }
+
   /* ---------------- 打字输入 ---------------- */
 
   function persistSrs(immediate) {
@@ -765,6 +905,23 @@
     if (state.finished || state.lock || state.statsOpen || state.strokeOpen) return;
 
     var ch = String(raw).toLowerCase();
+
+    // 句模式下的标点按键直接响应上屏
+    if (isSentenceMode() && PUNCT_RE.test(state.chars[state.pos] ? state.chars[state.pos].text : '')) {
+      // 标点处理
+    }
+
+    // 真实输入法模式
+    if (settings.ime) {
+      if (/^[a-z]$/.test(ch)) {
+        ensureStarted();
+        state.imeBufferText += ch;
+        renderImePopup();
+        playClick();
+        return;
+      }
+    }
+
     if (ch === ' ' || ch === "'" || ch === '\u2019') return;  // 空格/分隔符跳过
     if (/^\d$/.test(ch)) {
       if (!settings.tones) return;                             // 未开声调模式忽略数字
@@ -1085,6 +1242,7 @@
     state.done = [];
     state.lock = false;
 
+    closeImePopup();
     els.result.hidden = true;
     els.typing.hidden = false;
     els.flash.textContent = '';
@@ -1189,7 +1347,7 @@
       startSession();
     });
 
-    [['tones', els.tones], ['echo', els.echo], ['speech', els.speech], ['sound', els.sound]]
+    [['tones', els.tones], ['ime', els.ime], ['echo', els.echo], ['speech', els.speech], ['sound', els.sound]]
       .forEach(function (entry) {
         var key = entry[0];
         var btn = entry[1];
@@ -1197,7 +1355,7 @@
           settings[key] = !settings[key];
           setPressed(btn, settings[key]);
           saveSettings();
-          if (key === 'tones' || key === 'echo') startSession();
+          if (key === 'tones' || key === 'echo' || key === 'ime') startSession();
           if (key === 'sound' && settings.sound) window.Sound.click();
           focusCatcher();
         });
@@ -1284,6 +1442,40 @@
     });
 
     catcher.addEventListener('keydown', function (e) {
+      if (settings.ime && state.imeBufferText) {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          // 选择第 1 候选词
+          var first = state.imeList[state.imePage * IME_PAGE_SIZE];
+          if (first) chooseImeCandidate(first);
+          return;
+        }
+        if (/^[1-5]$/.test(e.key)) {
+          e.preventDefault();
+          var idx = parseInt(e.key, 10) - 1;
+          var cand = state.imeList[state.imePage * IME_PAGE_SIZE + idx];
+          if (cand) chooseImeCandidate(cand);
+          return;
+        }
+        if (e.key === '=' || e.key === 'PageDown') {
+          e.preventDefault();
+          state.imePage++;
+          renderImePopup();
+          return;
+        }
+        if (e.key === '-' || e.key === 'PageUp') {
+          e.preventDefault();
+          state.imePage--;
+          renderImePopup();
+          return;
+        }
+        if (e.key === 'Backspace') {
+          e.preventDefault();
+          state.imeBufferText = state.imeBufferText.slice(0, -1);
+          renderImePopup();
+          return;
+        }
+      }
       if (e.key === 'Backspace') {
         e.preventDefault();
         handleBackspace();
