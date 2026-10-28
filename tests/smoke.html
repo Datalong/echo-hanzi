@@ -399,6 +399,46 @@ window.onload = async () => {
        d3.querySelectorAll('#pinyin .ch.is-tone').length + ' digits');
   }
 
+  // ---------- PWA 离线能力 ----------
+  const mRes = await fetch('../manifest.json');
+  ok('PWA：manifest.json 可访问', mRes.status === 200, 'status=' + mRes.status);
+  const manifest = await mRes.json();
+  ok('PWA：manifest 包含 standalone', manifest.display === 'standalone', manifest.display);
+  ok('PWA：manifest 包含 192 与 512 图标',
+     Array.isArray(manifest.icons) &&
+     manifest.icons.some(i => i.sizes === '192x192') &&
+     manifest.icons.some(i => i.sizes === '512x512'),
+     (manifest.icons || []).map(i => i.sizes).join(', '));
+
+  const i192 = await fetch('../icon-192.png');
+  const i512 = await fetch('../icon-512.png');
+  ok('PWA：icon-192.png 存在', i192.status === 200 && i192.headers.get('content-type').includes('png'), 'status=' + i192.status);
+  ok('PWA：icon-512.png 存在', i512.status === 200 && i512.headers.get('content-type').includes('png'), 'status=' + i512.status);
+
+  // 校验 sw.js 里列出的所有静态资源都能 fetch 成功
+  const swRes = await fetch('../sw.js');
+  ok('PWA：sw.js 可访问', swRes.status === 200);
+  const swCode = await swRes.text();
+  const matchedList = swCode.match(/var PRECACHE_URLS = \[(.*?)\];/s);
+  ok('PWA：sw.js 包含预缓存清单', !!matchedList);
+  if (matchedList) {
+    const urls = JSON.parse('[' + matchedList[1].replace(/'/g, '"').replace(/,\s*\]/, ']') + ']');
+    let allOk = true;
+    for (const u of urls) {
+      if (u === './') continue;
+      const r = await fetch('../' + u.replace(/^\.\//, ''));
+      if (r.status !== 200) { allOk = false; log.push('FAIL 预缓存资源缺失 :: ' + u + ' -> ' + r.status); }
+    }
+    ok('PWA：所有预缓存资源均可 200 访问', allOk, urls.length + ' 个资源');
+  }
+
+  // 校验 index.html meta 标签
+  ok('PWA：iOS standalone meta 齐备',
+     doc.querySelector('link[rel="manifest"]') &&
+     doc.querySelector('link[rel="apple-touch-icon"]') &&
+     doc.querySelector('meta[name="theme-color"]') &&
+     doc.querySelector('meta[name="apple-mobile-web-app-capable"]'));
+
   } catch (err) {
     log.push('FAIL 用例中断 :: ' + (err && err.message ? err.message : String(err)));
   }

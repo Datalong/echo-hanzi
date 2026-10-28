@@ -1225,6 +1225,15 @@
     startSession();
     setTimeout(focusCatcher, 60);
     document.documentElement.setAttribute('data-app-ready', '1');
+    registerServiceWorker();
+  }
+
+  function registerServiceWorker() {
+    if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+      // 避免在测试环境（?t=...）中带来干扰
+      if (location.search.indexOf('drill') !== -1 || location.search.indexOf('srs') !== -1) return;
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    }
   }
 
   if (document.readyState === 'loading') {
