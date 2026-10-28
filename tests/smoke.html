@@ -1,8 +1,14 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><title>running</title></head>
 <body>
-<iframe id="f" src="../index.html" style="width:800px;height:600px"></iframe>
 <script>
+  // 每次测试从干净的本地状态开始（设置 / SRS 记录都可能影响断言）
+  try { localStorage.clear(); } catch (e) {}
+</script>
+<iframe id="f" style="width:800px;height:600px"></iframe>
+<script>
+  document.getElementById('f').src = '../index.html?t=' + Date.now();
+
 const log = [];
 const ok = (name, cond, extra) => log.push((cond ? 'PASS ' : 'FAIL ') + name + (extra ? ' :: ' + extra : ''));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -15,6 +21,19 @@ function typeChars(win, str) {
     catcher.dispatchEvent(new win.Event('input', { bubbles: true }));
   }
 }
+/** 等 iframe 内的应用真正启动（脚本绑定完成）再断言 */
+async function waitReady(frame) {
+  for (let i = 0; i < 60; i++) {
+    const d = frame.contentDocument;
+    if (d && d.readyState === 'complete' && d.getElementById('catcher') &&
+        d.querySelector('#pinyin .ch')) {
+      return d;
+    }
+    await sleep(50);
+  }
+  return frame.contentDocument;
+}
+
 function pinyinText(win) {
   return [...win.document.querySelectorAll('#pinyin .ch')].map(s => s.textContent).join('');
 }
@@ -23,10 +42,25 @@ function curIndex(win) {
   return cells.findIndex(c => c.classList.contains('is-cur'));
 }
 
+function dumpLog() {
+  const pre = document.createElement('pre');
+  pre.id = 'log';
+  pre.textContent = log.join('\n');
+  document.body.appendChild(pre);
+}
+
+window.onerror = (msg, src, line, col) => {
+  log.push('FAIL 脚本异常 :: ' + msg + ' @' + line + ':' + col);
+  dumpLog();
+  document.title = 'error';
+};
+
 window.onload = async () => {
+  try {
   const f = document.getElementById('f');
-  await sleep(300);
-  const win = f.contentWindow, doc = win.document;
+  const doc0 = await waitReady(f);
+  await sleep(100);
+  const win = f.contentWindow, doc = doc0;
 
   ok('渲染首词汉字', doc.getElementById('hanzi').textContent.trim().length > 0, doc.getElementById('hanzi').textContent);
   ok('生成 pinyin cells', doc.querySelectorAll('#pinyin .ch').length > 0, pinyinText(win));
@@ -167,12 +201,60 @@ window.onload = async () => {
   ok('切回词模式：恢复大字号汉字', !doc.getElementById('hanzi').hidden && doc.getElementById('sentence').hidden);
   ok('切回词模式：进度单位为词', /词/.test(doc.getElementById('run-pos').textContent), doc.getElementById('run-pos').textContent);
 
-  console.log(log.join('\n'));
+  // ---------- SRS 排程 ----------
+  const SRS_KEY = 'echo-hanzi:srs:v1';
+
+  const tdb = {};
+  const lapse = win.Srs.schedule(tdb, { hanzi: '测试' }, false, Date.now());
+  ok('SRS：答错回到 10 分钟后再来',
+     lapse.reps === 0 && lapse.interval === 0 && Math.round((lapse.due - Date.now()) / 60000) === 10,
+     'reps=' + lapse.reps + ' dueInMin=' + ((lapse.due - Date.now()) / 60000).toFixed(1));
+  const recovered = win.Srs.schedule(tdb, { hanzi: '测试' }, true, Date.now());
+  ok('SRS：答对后间隔从 1 天起', recovered.interval === 1, 'interval=' + recovered.interval);
+
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem(SRS_KEY) || 'null'); } catch (e) { stored = null; }
+  const storedKeys = stored ? Object.keys(stored) : [];
+  ok('SRS：作答后写入本地记录', storedKeys.length > 0, storedKeys.slice(0, 3).join(',') + ' … 共 ' + storedKeys.length + ' 条');
+  ok('SRS：词与句分开记账',
+     storedKeys.some(k => k.indexOf('w:') === 0) && storedKeys.some(k => k.indexOf('s:') === 0),
+     storedKeys.filter(k => k.indexOf('s:') === 0).length + ' 句 / ' +
+     storedKeys.filter(k => k.indexOf('w:') === 0).length + ' 词');
+
+  const cleanRec = stored[storedKeys.filter(k => k.indexOf('w:') === 0)[0]];
+  ok('SRS：无错题排到 1 天后', cleanRec && cleanRec.interval === 1 && cleanRec.due > Date.now(),
+     cleanRec ? 'interval=' + cleanRec.interval : 'missing');
+
+  // 注入一条“已到期”的记录，看它是否被优先排出
+  const target = win.WORD_LISTS.hsk1[0];
+  localStorage.setItem(SRS_KEY, JSON.stringify({
+    ['w:' + target.hanzi]: { reps: 2, interval: 3, due: Date.now() - 60000, seen: 2, errors: 0, last: Date.now() - 4 * 86400000 }
+  }));
+  localStorage.setItem('echo-hanzi:v1', JSON.stringify({
+    mode: 'word', level: 'hsk1', count: 10, tones: false, echo: false, speech: false, sound: false, theme: 'dark'
+  }));
+
+  const f2 = document.createElement('iframe');
+  f2.width = 700; f2.height = 560; f2.src = '../index.html?srs=' + Date.now();
+  document.body.appendChild(f2);
+  const d2ready = await waitReady(f2);
+  await sleep(100);
+  const d2 = d2ready || f2.contentDocument;
+  ok('SRS：第二实例已加载', !!d2 && !!d2.getElementById('hanzi'), 'doc=' + !!d2);
+
+  ok('SRS：到期题排在本轮第一', d2.getElementById('hanzi').textContent === target.hanzi,
+     d2.getElementById('hanzi').textContent + ' / 期望 ' + target.hanzi);
+  ok('SRS：卡片角标标记复习', d2.getElementById('card-badge').textContent === '复习',
+     d2.getElementById('card-badge').textContent);
+  ok('SRS：顶栏显示待复习数', !d2.getElementById('run-due').hidden &&
+     /待复习\s*1/.test(d2.getElementById('run-due').textContent),
+     d2.getElementById('run-due').textContent);
+
+  } catch (err) {
+    log.push('FAIL 用例中断 :: ' + (err && err.message ? err.message : String(err)));
+  }
+  dumpLog();
   document.title = log.filter(l => l.startsWith('FAIL')).length + ' failures';
-  const pre = document.createElement('pre');
-  pre.id = 'log';
-  pre.textContent = log.join('\n');
-  document.body.appendChild(pre);
 };
 </script>
 </body></html>

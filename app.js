@@ -36,6 +36,9 @@
     runPos: $('run-pos'),
     runLevel: $('run-level'),
     runMode: $('run-mode'),
+    runDue: $('run-due'),
+    cardBadge: $('card-badge'),
+    rsDue: $('rs-due'),
     card: $('card'),
     hanzi: $('hanzi'),
     pinyin: $('pinyin'),
@@ -80,8 +83,13 @@
     finished: true,
     wordHadError: false,
     done: [],
-    lock: false
+    lock: false,
+    dueCount: 0,
+    reviewKeys: {},
+    sessionId: 0
   };
+  var srsDb = window.Srs ? window.Srs.load() : {};
+  var srsSaveTimer = null;
   var ticker = null;
 
   /* ---------------- 设置 ---------------- */
@@ -139,23 +147,42 @@
     return (table[settings.level] || table.hsk1).slice();
   }
 
+  /** 到期题目优先，其余随机补齐；同时记录“本轮哪些是复习” */
   function buildQueue() {
     var pool = poolFor();
     var wanted = settings.count > 0 ? settings.count : pool.length;
+    var due = window.Srs ? window.Srs.dueItems(srsDb, pool) : [];
+
     var out = [];
-    var guard = 0;
-    while (out.length < wanted && guard++ < 500) {
-      var batch = shuffle(pool);
-      for (var i = 0; i < batch.length && out.length < wanted; i++) {
-        var last = out[out.length - 1];
-        if (last && batch[i].hanzi === last.hanzi && batch.length > 1) {
-          batch.push(batch.splice(i, 1)[0]);
-          i--;
-          continue;
+    var reviewKeys = {};
+    state.dueCount = due.length;
+
+    due.slice(0, wanted).forEach(function (entry) {
+      out.push(entry.item);
+      reviewKeys[window.Srs.keyOf(entry.item)] = true;
+    });
+
+    if (out.length < wanted) {
+      var fresh = pool.filter(function (item) {
+        return !(window.Srs && srsDb[window.Srs.keyOf(item)]);
+      });
+      var pool2 = fresh.length ? fresh : pool.slice();
+      var guard = 0;
+      while (out.length < wanted && guard++ < 500) {
+        var batch = shuffle(pool2);
+        for (var i = 0; i < batch.length && out.length < wanted; i++) {
+          var last = out[out.length - 1];
+          if (last && batch[i].hanzi === last.hanzi && batch.length > 1) {
+            batch.push(batch.splice(i, 1)[0]);
+            i--;
+            continue;
+          }
+          out.push(batch[i]);
         }
-        out.push(batch[i]);
       }
     }
+
+    state.reviewKeys = reviewKeys;
     return out;
   }
 
@@ -297,6 +324,13 @@
 
     buildDom();
 
+    var isReview = !!state.reviewKeys[window.Srs ? window.Srs.keyOf(item) : ''];
+    if (els.cardBadge) {
+      els.cardBadge.textContent = isReview ? '复习' : (isSentenceMode() ? '新句' : '新词');
+      els.cardBadge.className = 'card-badge' + (isReview ? ' is-review' : '');
+      els.cardBadge.hidden = false;
+    }
+
     els.reveal.hidden = !settings.echo;
     if (els.hintPunct) els.hintPunct.hidden = !isSentenceMode();
     if (settings.echo) {
@@ -347,6 +381,15 @@
     if (isSentenceMode()) modes.push('句型');
     els.runMode.textContent = modes.join(' · ');
 
+    if (els.runDue) {
+      if (state.dueCount > 0) {
+        els.runDue.textContent = '待复习 ' + state.dueCount;
+        els.runDue.hidden = false;
+      } else {
+        els.runDue.hidden = true;
+      }
+    }
+
     var within = state.cells.length ? state.pos / state.cells.length : 0;
     var ratio = total ? (state.index + within) / total : 0;
     els.progress.style.width = (ratio * 100).toFixed(2) + '%';
@@ -394,6 +437,16 @@
   }
 
   /* ---------------- 打字输入 ---------------- */
+
+  function persistSrs(immediate) {
+    if (!window.Srs) return;
+    clearTimeout(srsSaveTimer);
+    if (immediate) {
+      window.Srs.save(srsDb);
+      return;
+    }
+    srsSaveTimer = setTimeout(function () { window.Srs.save(srsDb); }, 800);
+  }
 
   function ensureStarted() {
     if (state.startedAt || state.finished) return;
@@ -456,6 +509,11 @@
     state.done.push({ item: item, errors: state.wordHadError });
     state.lock = true;
 
+    if (window.Srs) {
+      window.Srs.schedule(srsDb, item, !state.wordHadError);
+      persistSrs();
+    }
+
     if (settings.sound) window.Sound.success();
     speak(item.hanzi);
     els.card.classList.add('done');
@@ -465,7 +523,9 @@
     updateRunLine();
     updateStats();
 
+    var sessionId = state.sessionId;
     setTimeout(function () {
+      if (sessionId !== state.sessionId) return;   // 期间已经重开了一轮，丢弃本次推进
       state.index++;
       if (state.index >= state.queue.length) {
         finish();
@@ -478,6 +538,7 @@
   /* ---------------- 生命周期 ---------------- */
 
   function startSession() {
+    state.sessionId++;
     state.queue = buildQueue();
     state.index = 0;
     state.correctKeys = 0;
@@ -509,6 +570,20 @@
     els.rsWords.textContent = String(state.done.length);
     els.rsStreak.textContent = String(state.bestStreak);
     els.rsTime.textContent = formatTime(elapsed());
+    if (window.Srs) persistSrs(true);
+
+    if (els.rsDue && window.Srs) {
+      var st = window.Srs.stats(srsDb, poolFor());
+      if (st.due > 0) {
+        els.rsDue.textContent = '待复习 ' + st.due + ' 题 · 下一轮会优先出现（答错的会 10 分钟后再来）';
+      } else if (st.learning > 0) {
+        els.rsDue.textContent = '已进入复习排程 ' + st.learning + ' 题 · 间隔按 1 → 3 → 7 天递增（上限 ' +
+          window.Srs.MAX_INTERVAL_DAYS + ' 天）';
+      } else {
+        els.rsDue.textContent = '';
+      }
+    }
+
     if (settings.sound) window.Sound.fanfare();
 
     var missed = state.done.filter(function (entry) { return entry.errors; });
@@ -649,8 +724,13 @@
     });
 
     document.addEventListener('visibilitychange', function () {
-      if (document.hidden) window.Speech.stop();
+      if (document.hidden) {
+        window.Speech.stop();
+        persistSrs(true);          // 切走/关页前落盘，避免丢复习记录
+      }
     });
+
+    window.addEventListener('pagehide', function () { persistSrs(true); });
   }
 
   function boot() {
