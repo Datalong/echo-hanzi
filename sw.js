@@ -4,6 +4,7 @@ var PRECACHE_URLS = [
   './',
   './index.html',
   './styles.css',
+  './i18n.js',
   './pinyin.js',
   './ime.js',
   './dict.js',

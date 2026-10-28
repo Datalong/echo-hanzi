@@ -56,6 +56,7 @@
     speech: $('tg-speech'),
     sound: $('tg-sound'),
     theme: $('tg-theme'),
+    tgLang: $('tg-lang'),
     progress: $('progress-fill'),
     runPos: $('run-pos'),
     runLevel: $('run-level'),
@@ -155,6 +156,105 @@
   var statsDb = window.Stats ? window.Stats.load() : null;
   var statsSaveTimer = null;
   var ticker = null;
+
+
+  /* ---------------- 国际化翻译更新 ---------------- */
+
+  function t(k, vars) {
+    if (window.I18n && window.I18n.t) return window.I18n.t(k, vars);
+    return k;
+  }
+
+  function applyTranslations() {
+    if (!window.I18n) return;
+    var lang = window.I18n.getLang();
+
+    // 语言按钮文本：提示可切换到的目标语言
+    if (els.tgLang) {
+      els.tgLang.textContent = (lang === 'zh-CN' ? 'EN' : '中');
+      els.tgLang.title = (lang === 'zh-CN' ? 'Switch to English' : '切换为中文');
+    }
+
+    // 顶栏 Label
+    var q = function(id, text) { var el = $(id); if (el) el.textContent = text; };
+    var labelEls = document.querySelectorAll('.sfield-label');
+    if (labelEls.length >= 4) {
+      labelEls[0].textContent = t('lblMode');
+      labelEls[1].textContent = t('lblLevel');
+      labelEls[2].textContent = t('lblStory');
+      labelEls[3].textContent = t('lblCount');
+    }
+
+    // 模式下拉项
+    if (els.mode && els.mode.options.length >= 3) {
+      els.mode.options[0].textContent = t('optWord');
+      els.mode.options[1].textContent = t('optSentence');
+      els.mode.options[2].textContent = t('optStory');
+    }
+    // 数量下拉项
+    if (els.count && els.count.options.length >= 4) {
+      els.count.options[3].textContent = t('optAll');
+    }
+
+    // 顶栏开关
+    if (els.tones) els.tones.textContent = t('btnTones');
+    if (els.ime) els.ime.textContent = t('btnIme');
+    if (els.echo) els.echo.textContent = t('btnEcho');
+    if (els.speech) els.speech.textContent = t('btnSpeech');
+    if (els.sound) els.sound.textContent = t('btnSound');
+
+    // 揭示答案按钮
+    if (els.reveal) els.reveal.textContent = t('btnReveal');
+
+    // 统计条指标标签
+    var statKs = document.querySelectorAll('.stats .stat-k');
+    if (statKs.length >= 4) {
+      statKs[0].textContent = t('statCpm');
+      statKs[1].textContent = t('statAcc');
+      statKs[2].textContent = t('statStreak');
+      statKs[3].textContent = t('statTime');
+    }
+
+    // 焦点提示
+    if (els.focusHint) els.focusHint.textContent = t('focusHint');
+
+    // 成绩页面文案
+    q('btn-again', t('btnAgain'));
+    q('btn-newset', t('btnNewset'));
+    q('btn-dash-from-result', t('btnViewDash'));
+    var rsTitle = document.querySelector('.result-eyebrow');
+    if (rsTitle) rsTitle.textContent = t('resTitle');
+    var rsKs = document.querySelectorAll('.result-grid .stat-k');
+    if (rsKs.length >= 4) {
+      rsKs[0].textContent = t('statAcc');
+      rsKs[1].textContent = t('resWords');
+      rsKs[2].textContent = t('resStreak');
+      rsKs[3].textContent = t('statTime');
+    }
+    var rvTitle = document.querySelector('.review-title');
+    if (rvTitle) rvTitle.textContent = t('resNeedReview');
+
+    // 看板页文案
+    var dTitle = document.querySelector('.dash-title');
+    if (dTitle) dTitle.textContent = t('dashTitle');
+    q('btn-dash-back', t('btnBackTyping'));
+    q('dash-empty', t('dashEmpty'));
+    q('btn-dash-reset', t('btnResetStats'));
+
+    // 页脚提示
+    if (els.btnStats) els.btnStats.textContent = t('btnStats');
+
+    // 刷新运行行与卡片角标
+    updateRunLine();
+    var cur = currentItem();
+    if (cur) {
+      var isReview = !!state.reviewKeys[window.Srs ? window.Srs.keyOf(cur) : ''];
+      if (els.cardBadge) {
+        els.cardBadge.textContent = isReview ? t('tagReview') : (isSentenceMode() ? t('tagNewSentence') : t('tagNewWord'));
+      }
+    }
+    if (state.statsOpen) renderDashboard();
+  }
 
   /* ---------------- 设置 ---------------- */
 
@@ -745,7 +845,7 @@
 
     var isReview = !!state.reviewKeys[window.Srs ? window.Srs.keyOf(item) : ''];
     if (els.cardBadge) {
-      els.cardBadge.textContent = isReview ? '复习' : (isSentenceMode() ? '新句' : '新词');
+      els.cardBadge.textContent = isReview ? t('tagReview') : (isSentenceMode() ? t('tagNewSentence') : t('tagNewWord'));
       els.cardBadge.className = 'card-badge' + (isReview ? ' is-review' : '');
       els.cardBadge.hidden = false;
     }
@@ -792,8 +892,8 @@
   }
 
   function runUnit() {
-    if (isStoryMode()) return '段';
-    return isSentenceMode() ? '句' : '词';
+    if (isStoryMode()) return t('unitStory');
+    return isSentenceMode() ? t('unitSentence') : t('unitWord');
   }
 
 
@@ -821,11 +921,11 @@
     els.runPos.textContent = Math.min(state.index + 1, total) + ' / ' + total + ' ' + runUnit();
     els.runLevel.textContent = item ? item.level : settings.level.toUpperCase();
     var modes = [];
-    if (settings.ime) modes.push('输入法');
-    if (settings.tones) modes.push('含声调');
-    if (settings.echo) modes.push('听音模式');
-    if (isStoryMode()) modes.push('故事短文');
-    else if (isSentenceMode()) modes.push('句型');
+    if (settings.ime) modes.push(t('btnIme'));
+    if (settings.tones) modes.push(t('btnTones'));
+    if (settings.echo) modes.push(t('btnEcho'));
+    if (isStoryMode()) modes.push(t('optStory'));
+    else if (isSentenceMode()) modes.push(t('optSentence'));
     els.runMode.textContent = modes.join(' · ');
 
     if (els.runDrill) {
@@ -847,7 +947,7 @@
 
     if (els.runDue) {
       if (state.dueCount > 0) {
-        els.runDue.textContent = '待复习 ' + state.dueCount;
+        els.runDue.textContent = t('tagDue') + ' ' + state.dueCount;
         els.runDue.hidden = false;
       } else {
         els.runDue.hidden = true;
@@ -1546,6 +1646,16 @@
         });
       });
 
+    if (els.tgLang) {
+      els.tgLang.addEventListener('click', function () {
+        if (window.I18n) {
+          window.I18n.toggleLanguage();
+          applyTranslations();
+          focusCatcher();
+        }
+      });
+    }
+
     els.theme.addEventListener('click', function () {
       settings.theme = settings.theme === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', settings.theme);
@@ -1800,6 +1910,7 @@
 
   function bootInner() {
     applySettingsToUI();
+    applyTranslations();
     bindSettings();
     bindInput();
     if (!window.Speech.supported) {

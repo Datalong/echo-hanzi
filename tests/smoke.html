@@ -43,7 +43,7 @@ async function waitReady(frame, url) {
       const w = frame.contentWindow;
       if (d.documentElement.getAttribute('data-app-ready') === '1' &&
           d.querySelector('#pinyin .ch') &&
-          w && w.Srs && w.Stats && w.Strokes && w.Ime && w.Stories && w.Dict) {
+          w && w.Srs && w.Stats && w.Strokes && w.Ime && w.Stories && w.Dict && w.I18n) {
         return d;
       }
       await sleep(20);
@@ -534,6 +534,29 @@ window.onload = async () => {
   // 模拟状态切换通知
   const waveEl = doc.getElementById('voice-wave');
   ok('发音：声波组件存在', !!waveEl);
+
+  // ---------- 多语言国际化 (i18n: 中文 / EN) ----------
+  ok('i18n：I18n 模块可用', typeof win.I18n === 'object' && typeof win.I18n.t === 'function');
+  ok('i18n：双语字典齐备', win.I18n.TRANSLATIONS['zh-CN'] && win.I18n.TRANSLATIONS['en']);
+
+  // 确保初始置为中文进行测试
+  win.I18n.setLanguage('zh-CN');
+  doc.getElementById('tg-lang').click(); // 切换为 EN
+  await sleep(150);
+
+  ok('i18n：切换到英文', win.I18n.getLang() === 'en');
+  ok('i18n：控件 Label 变为英文', doc.querySelector('.sfield-label').textContent === 'Mode',
+     doc.querySelector('.sfield-label').textContent);
+  ok('i18n：开关按钮变为英文', doc.getElementById('tg-tones').textContent.trim() === 'Tones',
+     doc.getElementById('tg-tones').textContent.trim());
+  ok('i18n：统计条变为 CPM / Accuracy',
+     doc.querySelector('.stats .stat-k').textContent === 'CPM');
+
+  // 切回中文
+  doc.getElementById('tg-lang').click();
+  await sleep(150);
+  ok('i18n：切回中文界面', win.I18n.getLang() === 'zh-CN');
+  ok('i18n：控件恢复中文', doc.querySelector('.sfield-label').textContent === '模式');
 
   // ---------- PWA 离线能力 ----------
   const mRes = await fetch('../manifest.json');
