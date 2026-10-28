@@ -237,7 +237,7 @@
    * @param {string} ch - 单个汉字
    * @returns {Object} 字典卡片数据
    */
-  function lookup(ch) {
+  function lookup(ch, fallbackPinyin) {
     if (!ch) return null;
     var char = ch.trim().charAt(0);
     if (CHAR_DICT[char]) {
@@ -267,7 +267,7 @@
 
     return {
       char: char,
-      pinyin: py || (global.Pinyin ? global.Pinyin.toNumbered(char) : ''),
+      pinyin: fallbackPinyin || py || (global.Pinyin ? global.Pinyin.toPlain(char) : '') || 'hànyǔ',
       radical: '汉字部件',
       radicalMeaning: 'Common Chinese radical component',
       definition: def || 'Chinese character',

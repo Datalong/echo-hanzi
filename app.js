@@ -229,7 +229,8 @@
 
   function showDictTooltip(ch, anchorEl) {
     if (!window.Dict || !els.dictTooltip || !ch) return;
-    var info = window.Dict.lookup(ch);
+    var cur = currentItem();
+    var info = window.Dict.lookup(ch, cur ? cur.pinyin : '');
     if (!info) return;
 
     state.dictChar = info.char;
