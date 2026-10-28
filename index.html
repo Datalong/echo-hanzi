@@ -97,6 +97,15 @@
 
     <section class="card" id="card">
       <span class="card-badge" id="card-badge" hidden></span>
+      
+      <!-- 语音播放波形小动效 -->
+      <div class="voice-wave" id="voice-wave" hidden title="按 R 重播发音">
+        <span class="wave-bar"></span>
+        <span class="wave-bar"></span>
+        <span class="wave-bar"></span>
+        <span class="wave-bar"></span>
+      </div>
+
       <button class="ghost-btn iconly card-stroke-btn" id="btn-show-stroke" type="button" title="查看笔顺 (S)">✍️</button>
       
       <!-- 故事沉浸式段落全景视图 -->
@@ -243,6 +252,7 @@
     <span><kbd>Tab</kbd> 换词</span>
     <span><kbd>Esc</kbd> 重来</span>
     <span><kbd>?</kbd> 看答案</span>
+    <span><kbd>R</kbd> 重听发音</span>
     <span><kbd>S</kbd> 笔顺</span>
     <span class="tip">ü 可以打 <kbd>v</kbd> 或 <kbd>u</kbd>；空格会自动跳过</span>
     <span class="tip" id="hint-punct" hidden>句中标点用 <kbd>,</kbd> <kbd>.</kbd> <kbd>!</kbd> <kbd>?</kbd> 键</span>

@@ -64,6 +64,7 @@
     runDrill: $('run-drill'),
     dashDrills: $('dash-drills'),
     cardBadge: $('card-badge'),
+    voiceWave: $('voice-wave'),
     rsDue: $('rs-due'),
     stats: $('screen-stats'),
     dashSummary: $('dash-summary'),
@@ -892,7 +893,11 @@
 
   function speak(text) {
     if (!settings.speech) return;
-    window.Speech.speak(text, isSentenceMode() ? 0.8 : 0.85);
+    var rate = isStoryMode() ? 0.86 : (isSentenceMode() ? 0.82 : 0.84);
+    window.Speech.speak(text, rate);
+    if (els.speech) {
+      els.speech.title = '语音已开启 (当前音色: ' + window.Speech.getVoiceName() + ') · 按 R 重播';
+    }
   }
 
   function playClick() {
@@ -1577,6 +1582,19 @@
         openStrokeModal(els.hanzi.textContent.trim());
       });
     }
+
+    // 监听高保真语音发音状态，触发声波微动效
+    if (window.Speech && window.Speech.setOnSpeakingChange) {
+      window.Speech.setOnSpeakingChange(function (isSpeaking) {
+        if (els.voiceWave) els.voiceWave.hidden = !isSpeaking;
+      });
+    }
+    if (els.voiceWave) {
+      els.voiceWave.addEventListener('click', function () {
+        if (window.Speech) window.Speech.replay();
+      });
+    }
+
     // 句模式下点击单个字打开笔顺
     if (els.sentence) {
       els.sentence.addEventListener('click', function (e) {
@@ -1734,6 +1752,12 @@
       if ((e.key === 's' || e.key === 'S') && (e.altKey || e.metaKey || document.activeElement !== els.catcher)) {
         e.preventDefault();
         openStrokeModal();
+        return;
+      }
+      if ((e.key === 'r' || e.key === 'R') && (e.altKey || e.metaKey || document.activeElement !== els.catcher)) {
+        e.preventDefault();
+        if (window.Speech) window.Speech.replay();
+        return;
       }
     });
 

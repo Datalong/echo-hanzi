@@ -521,6 +521,20 @@ window.onload = async () => {
   await sleep(80);
   ok('词典：打字时自动隐藏不打扰', doc.getElementById('dict-tooltip').hidden);
 
+  // ---------- 高保真自然发音与重播引擎 ----------
+  ok('发音：Speech 包含重播接口', typeof win.Speech.replay === 'function');
+  ok('发音：Speech 包含音色自省', typeof win.Speech.getVoiceName === 'function');
+  const voiceName = win.Speech.getVoiceName();
+  ok('发音：已识别中文发音人', voiceName.length > 0, voiceName);
+
+  // 模拟发音触发并校验记忆
+  win.Speech.speak('你好中国');
+  ok('发音：文本记忆准确', win.Speech.getLastSpokenText() === '你好中国', win.Speech.getLastSpokenText());
+
+  // 模拟状态切换通知
+  const waveEl = doc.getElementById('voice-wave');
+  ok('发音：声波组件存在', !!waveEl);
+
   // ---------- PWA 离线能力 ----------
   const mRes = await fetch('../manifest.json');
   ok('PWA：manifest.json 可访问', mRes.status === 200, 'status=' + mRes.status);

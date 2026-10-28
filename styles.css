@@ -1427,3 +1427,42 @@ kbd {
   border-radius: 6px;
   padding: 2px 7px;
 }
+
+/* ---------------- 语音播放动态声波 ---------------- */
+
+.voice-wave {
+  position: absolute;
+  top: 13px;
+  right: 48px;
+  display: flex;
+  align-items: center;
+  gap: 2.5px;
+  height: 16px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: opacity 0.2s ease;
+}
+
+.wave-bar {
+  display: inline-block;
+  width: 2.5px;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: waveDance 0.8s ease-in-out infinite alternate;
+}
+
+.wave-bar:nth-child(1) { height: 35%; animation-delay: 0.1s; }
+.wave-bar:nth-child(2) { height: 90%; animation-delay: 0.3s; }
+.wave-bar:nth-child(3) { height: 60%; animation-delay: 0.2s; }
+.wave-bar:nth-child(4) { height: 80%; animation-delay: 0.4s; }
+
+@keyframes waveDance {
+  0% { transform: scaleY(0.3); }
+  100% { transform: scaleY(1.15); }
+}
+
+.voice-wave:hover {
+  filter: brightness(1.2);
+}
