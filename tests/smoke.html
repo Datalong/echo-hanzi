@@ -43,7 +43,7 @@ async function waitReady(frame, url) {
       const w = frame.contentWindow;
       if (d.documentElement.getAttribute('data-app-ready') === '1' &&
           d.querySelector('#pinyin .ch') &&
-          w && w.Srs && w.Stats && w.Strokes && w.Ime && w.Stories && w.Dict && w.I18n) {
+          w && w.Srs && w.Stats && w.Strokes && w.Ime && w.Stories && w.Dict && w.I18n && w.Share) {
         return d;
       }
       await sleep(20);
@@ -557,6 +557,28 @@ window.onload = async () => {
   await sleep(150);
   ok('i18n：切回中文界面', win.I18n.getLang() === 'zh-CN');
   ok('i18n：控件恢复中文', doc.querySelector('.sfield-label').textContent === '模式');
+
+  // ---------- 成绩战绩海报一键生成 (Share Poster) ----------
+  ok('海报：Share 模块可用', typeof win.Share === 'object' && typeof win.Share.createResultCard === 'function');
+  const dummyCanvas = win.Share.createResultCard({
+    cpm: 888, acc: 98, streak: 15, words: 10, time: '1:20',
+    characters: ['中', '国', '大', '好'], modeName: 'Words', level: 'HSK 1', lang: 'zh-CN'
+  });
+  ok('海报：Canvas 创建成功', !!dummyCanvas && dummyCanvas.width === 1200 && dummyCanvas.height === 675,
+     dummyCanvas ? dummyCanvas.width + 'x' + dummyCanvas.height : 'failed');
+
+  // 打开海报预览弹窗
+  doc.getElementById('btn-share-card').click();
+  await sleep(200);
+
+  ok('海报：点击按钮弹出海报浮层', !doc.getElementById('share-modal').hidden);
+  const posterImg = doc.getElementById('share-preview-img');
+  ok('海报：海报图片渲染且为 PNG 数据流', !!posterImg && (posterImg.src || '').indexOf('data:image/png') === 0);
+
+  // Esc 关闭浮层
+  doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await sleep(150);
+  ok('海报：Esc 关闭海报浮层', doc.getElementById('share-modal').hidden);
 
   // ---------- PWA 离线能力 ----------
   const mRes = await fetch('../manifest.json');

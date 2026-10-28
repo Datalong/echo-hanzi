@@ -80,6 +80,13 @@
     btnDashBack: $('btn-dash-back'),
     btnDashReset: $('btn-dash-reset'),
     btnDashFromResult: $('btn-dash-from-result'),
+    btnShareCard: $('btn-share-card'),
+    shareModal: $('share-modal'),
+    shareTitle: $('share-title'),
+    sharePreviewImg: $('share-preview-img'),
+    btnShareClose: $('btn-share-close'),
+    btnCopyPoster: $('btn-copy-poster'),
+    btnDownloadPoster: $('btn-download-poster'),
     strokeModal: $('stroke-modal'),
     strokeChar: $('stroke-char'),
     strokeInfo: $('stroke-info'),
@@ -149,7 +156,8 @@
     imePage: 0,
     imeList: [],
     dictTimer: null,
-    dictChar: ''
+    dictChar: '',
+    shareCanvas: null
   };
   var srsDb = window.Srs ? window.Srs.load() : {};
   var srsSaveTimer = null;
@@ -222,6 +230,10 @@
     q('btn-again', t('btnAgain'));
     q('btn-newset', t('btnNewset'));
     q('btn-dash-from-result', t('btnViewDash'));
+    q('btn-share-card', t('btnShareCard'));
+    q('share-title', t('shareTitle'));
+    q('btn-copy-poster', t('btnCopyPoster'));
+    q('btn-download-poster', t('btnDownloadPoster'));
     var rsTitle = document.querySelector('.result-eyebrow');
     if (rsTitle) rsTitle.textContent = t('resTitle');
     var rsKs = document.querySelectorAll('.result-grid .stat-k');
@@ -319,6 +331,57 @@
   }
 
 
+
+
+  /* ---------------- 战绩海报分享 ---------------- */
+
+  function collectSessionChars() {
+    var chars = [];
+    state.done.forEach(function (entry) {
+      var item = entry.item || entry.word;
+      if (item && item.hanzi) {
+        Array.from(item.hanzi).forEach(function (ch) {
+          if (!/[，。！？：；、“”\s,.!?]/.test(ch) && chars.indexOf(ch) === -1) {
+            chars.push(ch);
+          }
+        });
+      }
+    });
+    return chars;
+  }
+
+  function openShareModal() {
+    if (!window.Share || !els.shareModal) return;
+    var lang = window.I18n ? window.I18n.getLang() : 'zh-CN';
+
+    var modeName = isStoryMode() ? t('optStory') : (isSentenceMode() ? t('optSentence') : t('optWord'));
+    var levelName = isStoryMode() ? (currentItem() ? currentItem().storyTitle : 'Story') : settings.level.toUpperCase();
+
+    var data = {
+      cpm: cpm(),
+      acc: accuracy(),
+      streak: state.bestStreak,
+      words: state.done.length,
+      time: formatTime(elapsed()),
+      characters: collectSessionChars(),
+      modeName: modeName,
+      level: levelName,
+      lang: lang
+    };
+
+    var canvas = window.Share.createResultCard(data);
+    state.shareCanvas = canvas;
+    if (canvas && els.sharePreviewImg) {
+      els.sharePreviewImg.src = canvas.toDataURL('image/png');
+    }
+
+    els.shareModal.hidden = false;
+  }
+
+  function closeShareModal() {
+    if (els.shareModal) els.shareModal.hidden = true;
+    state.shareCanvas = null;
+  }
 
   /* ---------------- 悬浮即时微词典 ---------------- */
 
@@ -1741,6 +1804,35 @@
       }
     });
 
+
+    if (els.btnShareCard) els.btnShareCard.addEventListener('click', openShareModal);
+    if (els.btnShareClose) els.btnShareClose.addEventListener('click', closeShareModal);
+    if (els.shareModal) {
+      els.shareModal.addEventListener('click', function (e) {
+        if (e.target === els.shareModal) closeShareModal();
+      });
+    }
+    if (els.btnDownloadPoster) {
+      els.btnDownloadPoster.addEventListener('click', function () {
+        if (state.shareCanvas && window.Share) {
+          window.Share.downloadCard(state.shareCanvas, 'echo-hanzi-result-' + Date.now() + '.png');
+        }
+      });
+    }
+    if (els.btnCopyPoster) {
+      els.btnCopyPoster.addEventListener('click', function () {
+        if (state.shareCanvas && window.Share) {
+          window.Share.copyCardToClipboard(state.shareCanvas, function () {
+            flash(t('msgCopied'), 'good');
+          }, function () {
+            // 后备：直接触发下载
+            window.Share.downloadCard(state.shareCanvas, 'echo-hanzi-result.png');
+            flash('已自动为您下载海报图片', 'good');
+          });
+        }
+      });
+    }
+
     if (els.btnStats) els.btnStats.addEventListener('click', openDashboard);
     if (els.btnDashFromResult) els.btnDashFromResult.addEventListener('click', openDashboard);
     if (els.btnDashBack) els.btnDashBack.addEventListener('click', closeDashboard);
@@ -1845,6 +1937,13 @@
     });
 
     document.addEventListener('keydown', function (e) {
+      if (els.shareModal && !els.shareModal.hidden) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeShareModal();
+        }
+        return;
+      }
       if (state.strokeOpen) {
         if (e.key === 'Escape') {
           e.preventDefault();

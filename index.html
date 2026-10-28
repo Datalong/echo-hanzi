@@ -190,6 +190,7 @@
     <div class="result-actions">
       <button class="primary-btn" id="btn-again" type="button">再练一轮</button>
       <button class="ghost-btn" id="btn-newset" type="button">换一批词</button>
+      <button class="ghost-btn" id="btn-share-card" type="button">分享海报</button>
       <button class="ghost-btn" id="btn-dash-from-result" type="button">看数据</button>
     </div>
   </section>
@@ -260,7 +261,29 @@
     <button class="link-btn" id="btn-stats" type="button">数据看板</button>
   </footer>
 
-  <div class="focus-hint" id="focus-hint" hidden>点一下页面开始输入</div>
+  <!-- 成绩战绩海报预览浮层 -->
+<div class="modal-backdrop" id="share-modal" hidden>
+  <div class="share-dialog">
+    <div class="stroke-header">
+      <div class="stroke-title-wrap">
+        <h3 class="share-title" id="share-title">战绩海报</h3>
+        <span class="stroke-info">1200 × 675 HD</span>
+      </div>
+      <button class="ghost-btn iconly stroke-close" id="btn-share-close" type="button" title="关闭 (Esc)">✕</button>
+    </div>
+
+    <div class="share-preview-box">
+      <img id="share-preview-img" alt="Result Poster" class="share-img" />
+    </div>
+
+    <div class="share-actions">
+      <button class="primary-btn" id="btn-copy-poster" type="button">复制图片</button>
+      <button class="ghost-btn" id="btn-download-poster" type="button">下载 PNG</button>
+    </div>
+  </div>
+</div>
+
+<div class="focus-hint" id="focus-hint" hidden>点一下页面开始输入</div>
 </div>
 
 <!-- 汉字笔顺动画演示浮层 -->
@@ -303,6 +326,7 @@
 <script src="pinyin.js"></script>
 <script src="data.js"></script>
 <script src="audio.js"></script>
+<script src="share.js"></script>
 <script src="i18n.js"></script>
 <script src="dict.js"></script>
 <script src="stories.js"></script>
