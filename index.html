@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="Echo Hanzi — 用打字的方式学中文：拼音输入、声调训练、听音盲打，面向 HSK 学习者。" />
+<title>Echo Hanzi · 中文打字学习</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot" aria-hidden="true"></span>
+      <span class="brand-name">Echo Hanzi</span>
+    </div>
+
+    <div class="controls">
+      <label class="sfield">
+        <span class="sfield-label">模式</span>
+        <select id="sel-mode">
+          <option value="word">词</option>
+          <option value="sentence">句</option>
+        </select>
+      </label>
+
+      <label class="sfield">
+        <span class="sfield-label">词库</span>
+        <select id="sel-level">
+          <option value="hsk1">HSK 1</option>
+          <option value="hsk2">HSK 2</option>
+          <option value="all">HSK 1 + 2</option>
+        </select>
+      </label>
+
+      <label class="sfield">
+        <span class="sfield-label">数量</span>
+        <select id="sel-count">
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="50">50</option>
+          <option value="0">全部</option>
+        </select>
+      </label>
+
+      <button class="toggle" id="tg-tones" type="button" aria-pressed="false" title="要求输入声调数字，如 ni3hao3">
+        声调
+      </button>
+      <button class="toggle" id="tg-echo" type="button" aria-pressed="false" title="隐藏汉字与拼音，只听音辨义">
+        听音
+      </button>
+      <button class="toggle" id="tg-speech" type="button" aria-pressed="true" title="完成一个词后朗读">
+        朗读
+      </button>
+      <button class="toggle" id="tg-sound" type="button" aria-pressed="true" title="敲击音效">
+        音效
+      </button>
+      <button class="toggle iconly" id="tg-theme" type="button" title="切换主题">◐</button>
+    </div>
+  </header>
+
+  <main class="screen" id="screen-typing">
+
+    <div class="meter" aria-hidden="true"><div class="meter-fill" id="progress-fill"></div></div>
+
+    <div class="runline">
+      <span id="run-pos">1 / 20</span>
+      <span class="dot" aria-hidden="true">·</span>
+      <span id="run-level">HSK 1</span>
+      <span class="grow"></span>
+      <span id="run-mode"></span>
+    </div>
+
+    <section class="card" id="card">
+      <div class="hanzi" id="hanzi" lang="zh-Hans">你好</div>
+      <div class="pinyin" id="pinyin" aria-live="off"></div>
+      <div class="sentence" id="sentence" lang="zh-Hans" hidden></div>
+      <div class="english" id="english">hello</div>
+      <button class="ghost-btn" id="btn-reveal" type="button" hidden>显示答案</button>
+    </section>
+
+    <div class="stats">
+      <div class="stat"><span class="stat-v" id="st-cpm">0</span><span class="stat-k">字符/分</span></div>
+      <div class="stat"><span class="stat-v" id="st-acc">100%</span><span class="stat-k">正确率</span></div>
+      <div class="stat"><span class="stat-v" id="st-streak">0</span><span class="stat-k">连击</span></div>
+      <div class="stat"><span class="stat-v" id="st-time">0:00</span><span class="stat-k">用时</span></div>
+    </div>
+
+    <p class="flash" id="flash" role="status" aria-live="polite"></p>
+  </main>
+
+  <section class="screen result" id="screen-result" hidden>
+    <p class="result-eyebrow">本轮完成</p>
+    <div class="result-hero">
+      <span class="result-num" id="rs-cpm">0</span>
+      <span class="result-unit">字符/分</span>
+    </div>
+
+    <div class="result-grid">
+      <div class="stat"><span class="stat-v" id="rs-acc">0%</span><span class="stat-k">正确率</span></div>
+      <div class="stat"><span class="stat-v" id="rs-words">0</span><span class="stat-k">完成词数</span></div>
+      <div class="stat"><span class="stat-v" id="rs-streak">0</span><span class="stat-k">最长连击</span></div>
+      <div class="stat"><span class="stat-v" id="rs-time">0:00</span><span class="stat-k">用时</span></div>
+    </div>
+
+    <div class="review" id="review" hidden>
+      <h2 class="review-title">需要复习</h2>
+      <ul class="review-list" id="review-list"></ul>
+    </div>
+
+    <div class="result-actions">
+      <button class="primary-btn" id="btn-again" type="button">再练一轮</button>
+      <button class="ghost-btn" id="btn-newset" type="button">换一批词</button>
+    </div>
+  </section>
+
+  <footer class="hints">
+    <span><kbd>Tab</kbd> 换词</span>
+    <span><kbd>Esc</kbd> 重来</span>
+    <span><kbd>?</kbd> 看答案</span>
+    <span class="tip">ü 可以打 <kbd>v</kbd> 或 <kbd>u</kbd>；空格会自动跳过</span>
+    <span class="tip" id="hint-punct" hidden>句中标点用 <kbd>,</kbd> <kbd>.</kbd> <kbd>!</kbd> <kbd>?</kbd> 键</span>
+  </footer>
+
+  <div class="focus-hint" id="focus-hint" hidden>点一下页面开始输入</div>
+</div>
+
+<input id="catcher" class="catcher" type="text" inputmode="latin" lang="en"
+       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+       aria-label="拼音输入区" />
+
+<script src="pinyin.js"></script>
+<script src="data.js"></script>
+<script src="audio.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

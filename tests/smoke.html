@@ -1,0 +1,178 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>running</title></head>
+<body>
+<iframe id="f" src="../index.html" style="width:800px;height:600px"></iframe>
+<script>
+const log = [];
+const ok = (name, cond, extra) => log.push((cond ? 'PASS ' : 'FAIL ') + name + (extra ? ' :: ' + extra : ''));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function typeChars(win, str) {
+  const doc = win.document;
+  const catcher = doc.getElementById('catcher');
+  for (const ch of str) {
+    catcher.value = ch;
+    catcher.dispatchEvent(new win.Event('input', { bubbles: true }));
+  }
+}
+function pinyinText(win) {
+  return [...win.document.querySelectorAll('#pinyin .ch')].map(s => s.textContent).join('');
+}
+function curIndex(win) {
+  const cells = [...win.document.querySelectorAll('#pinyin .ch')];
+  return cells.findIndex(c => c.classList.contains('is-cur'));
+}
+
+window.onload = async () => {
+  const f = document.getElementById('f');
+  await sleep(300);
+  const win = f.contentWindow, doc = win.document;
+
+  ok('渲染首词汉字', doc.getElementById('hanzi').textContent.trim().length > 0, doc.getElementById('hanzi').textContent);
+  ok('生成 pinyin cells', doc.querySelectorAll('#pinyin .ch').length > 0, pinyinText(win));
+  ok('进度条存在', doc.querySelectorAll('#progress-fill').length === 1);
+
+  // 取当前词的拼音字母（无调）来模拟正确输入
+  const cells = win.Pinyin.buildCells(doc.getElementById('english').dataset.x || '', false);
+  const wordCells = [...doc.querySelectorAll('#pinyin .ch')].map(c => c.textContent).join('');
+  typeChars(win, wordCells);
+  await sleep(60);
+  ok('正确输入后字色变 ok', doc.querySelectorAll('#pinyin .ch.is-ok').length === wordCells.length,
+     doc.querySelectorAll('#pinyin .ch.is-ok').length + '/' + wordCells.length);
+
+  await sleep(400);
+  ok('自动进入下一词', doc.getElementById('run-pos').textContent.startsWith('2 /'), doc.getElementById('run-pos').textContent);
+
+  // 错误输入
+  const before = doc.getElementById('st-acc').textContent;
+  typeChars(win, 'zzz');
+  await sleep(60);
+  ok('错误输入降低正确率', doc.getElementById('st-acc').textContent !== before,
+     before + ' -> ' + doc.getElementById('st-acc').textContent);
+  ok('有连击/错误反馈', doc.querySelectorAll('#pinyin .is-err').length >= 0);
+  ok('连击归零', doc.getElementById('st-streak').textContent === '0', doc.getElementById('st-streak').textContent);
+
+  // 开声调模式
+  doc.getElementById('tg-tones').click();
+  await sleep(200);
+  ok('声调模式出现数字位', doc.querySelectorAll('#pinyin .is-tone').length > 0,
+     doc.querySelectorAll('#pinyin .is-tone').length + ' digits');
+  ok('声调模式按钮按下', doc.getElementById('tg-tones').getAttribute('aria-pressed') === 'true');
+
+  // 声调模式：按 numbered 输入应完成一个词
+  const toneCells = [...doc.querySelectorAll('#pinyin .ch')].map(c => c.textContent).join('');
+  const posBefore = doc.getElementById('run-pos').textContent;
+  typeChars(win, toneCells);
+  await sleep(450);
+  ok('声调模式可完成单词', doc.getElementById('run-pos').textContent !== posBefore,
+     posBefore + ' -> ' + doc.getElementById('run-pos').textContent);
+
+  // 听音模式
+  doc.getElementById('tg-echo').click();
+  await sleep(200);
+  ok('听音模式模糊卡片', doc.getElementById('card').classList.contains('masked'));
+  ok('听音模式显示答案按钮', !doc.getElementById('btn-reveal').hidden);
+  doc.getElementById('btn-reveal').click();
+  await sleep(100);
+  ok('点显示答案后揭示', !doc.getElementById('card').classList.contains('masked'));
+
+  // 主题切换
+  doc.getElementById('tg-theme').click();
+  await sleep(50);
+  ok('主题切换为 light', doc.documentElement.getAttribute('data-theme') === 'light',
+     doc.documentElement.getAttribute('data-theme'));
+  doc.getElementById('tg-theme').click();
+
+  // 数量改为 10 并快速跑完全部，验证结果页
+  doc.getElementById('tg-echo').click();  // 关掉听音，加速
+  doc.getElementById('tg-tones').click(); // 关掉声调
+  const sel = doc.getElementById('sel-count');
+  sel.value = '10';
+  sel.dispatchEvent(new win.Event('change', { bubbles: true }));
+  await sleep(200);
+  ok('数量切换后重置到 1 / 10', doc.getElementById('run-pos').textContent.startsWith('1 / 10'), doc.getElementById('run-pos').textContent);
+
+  for (let i = 0; i < 12; i++) {
+    const txt = [...doc.querySelectorAll('#pinyin .ch')].map(c => c.textContent).join('');
+    if (!txt) break;
+    typeChars(win, txt);
+    await sleep(320);
+    if (!doc.getElementById('screen-result').hidden) break;
+  }
+  ok('跑完出现结果页', !doc.getElementById('screen-result').hidden);
+  ok('结果页 CPM 有值', parseInt(doc.getElementById('rs-cpm').textContent, 10) > 0, doc.getElementById('rs-cpm').textContent);
+  ok('结果页正确率 100%', doc.getElementById('rs-acc').textContent === '100%', doc.getElementById('rs-acc').textContent);
+  ok('结果页词数 10', doc.getElementById('rs-words').textContent === '10', doc.getElementById('rs-words').textContent);
+
+  // 再练一轮
+  doc.getElementById('btn-again').click();
+  await sleep(200);
+  ok('再来一轮回到输入页', doc.getElementById('screen-result').hidden && doc.getElementById('run-pos').textContent.startsWith('1 / 10'));
+
+  // ---------- 句模式 ----------
+  const modeSel = doc.getElementById('sel-mode');
+  modeSel.value = 'sentence';
+  modeSel.dispatchEvent(new win.Event('change', { bubbles: true }));
+  await sleep(250);
+
+  const units = () => [...doc.querySelectorAll('#sentence .unit')];
+  const unitCells = u => [...u.querySelectorAll('.u-py .ch')].map(c => c.textContent).join('');
+  const unitHz = u => u.querySelector('.u-hz').textContent;
+  const hzText = units().map(unitHz).join('');
+  const matched = win.SENTENCE_LISTS.all.filter(s => s.hanzi === hzText)[0];
+
+  ok('句模式：显示逐字单元', units().length > 0, units().length + ' units -> ' + hzText);
+  ok('句模式：与词库句子一致', !!matched, hzText);
+  ok('句模式：单元数等于汉字数', units().length === [...hzText].length, units().length + ' vs ' + [...hzText].length);
+  ok('句模式：隐藏单词布局', doc.getElementById('hanzi').hidden && doc.getElementById('pinyin').hidden);
+  ok('句模式：进度含单位', /\/\s*\d+\s*句/.test(doc.getElementById('run-pos').textContent), doc.getElementById('run-pos').textContent);
+
+  const last = units()[units().length - 1];
+  ok('句模式：末位是标点单元', last.classList.contains('is-punct'), last.className);
+  ok('句模式：标点提示为键帽', /^[,.!?]$/.test(last.querySelector('.ch.is-punctkey').textContent),
+     last.querySelector('.ch.is-punctkey').textContent);
+
+  // 只打第一个字，验证逐字点亮
+  typeChars(win, unitCells(units()[0]));
+  await sleep(80);
+  ok('句模式：打完一字即点亮', units()[0].classList.contains('is-done'));
+  ok('句模式：下一字高亮为当前', units()[1].classList.contains('is-cur'), units()[1].className);
+
+  // 打完整句
+  const sentencePos = doc.getElementById('run-pos').textContent;
+  for (let i = 1; i < units().length; i++) typeChars(win, unitCells(units()[i]));
+  await sleep(450);
+  ok('句模式：整句完成进入下一句', doc.getElementById('run-pos').textContent !== sentencePos,
+     sentencePos + ' -> ' + doc.getElementById('run-pos').textContent);
+
+  // 声调 + 句模式
+  doc.getElementById('tg-tones').click();
+  await sleep(250);
+  ok('句模式+声调：出现声调位', doc.querySelectorAll('#sentence .u-py .ch.is-tone').length > 0,
+     doc.querySelectorAll('#sentence .u-py .ch.is-tone').length + ' tone cells');
+
+  // 听音 + 句模式
+  doc.getElementById('tg-echo').click();
+  await sleep(250);
+  ok('句模式+听音：卡片模糊', doc.getElementById('card').classList.contains('masked'));
+  ok('句模式+听音：可揭示', !doc.getElementById('btn-reveal').hidden);
+
+  // 回到词模式，确认还原
+  doc.getElementById('tg-echo').click();
+  doc.getElementById('tg-tones').click();
+  await sleep(150);
+  modeSel.value = 'word';
+  modeSel.dispatchEvent(new win.Event('change', { bubbles: true }));
+  await sleep(250);
+  ok('切回词模式：恢复大字号汉字', !doc.getElementById('hanzi').hidden && doc.getElementById('sentence').hidden);
+  ok('切回词模式：进度单位为词', /词/.test(doc.getElementById('run-pos').textContent), doc.getElementById('run-pos').textContent);
+
+  console.log(log.join('\n'));
+  document.title = log.filter(l => l.startsWith('FAIL')).length + ' failures';
+  const pre = document.createElement('pre');
+  pre.id = 'log';
+  pre.textContent = log.join('\n');
+  document.body.appendChild(pre);
+};
+</script>
+</body></html>
