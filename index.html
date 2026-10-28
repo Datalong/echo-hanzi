@@ -123,6 +123,27 @@
           <span class="ime-pager-hint">- / = 翻页</span>
         </div>
       </div>
+
+      <!-- 悬浮微词典卡片 -->
+      <div class="dict-tooltip" id="dict-tooltip" hidden>
+        <div class="dict-top">
+          <div class="dict-char-group">
+            <span class="dict-char" id="dt-char">喝</span>
+            <span class="dict-py" id="dt-py">hē</span>
+            <button class="dict-icon-btn" id="dt-btn-speak" type="button" title="发音">🔊</button>
+          </div>
+          <button class="dict-icon-btn" id="dt-btn-stroke" type="button" title="查看笔顺">✍️</button>
+        </div>
+        <div class="dict-def" id="dt-def">to drink; beverage</div>
+        <div class="dict-radical-box">
+          <span class="dict-rad-tag" id="dt-rad">部首 口</span>
+          <span class="dict-rad-desc" id="dt-rad-desc">口 (mouth / drinking action)</span>
+        </div>
+        <div class="dict-colloc-box" id="dt-colloc-box">
+          <div class="dict-colloc-title">常用搭配</div>
+          <div class="dict-colloc-list" id="dt-collocs"></div>
+        </div>
+      </div>
     </section>
 
     <div class="stats">
@@ -271,6 +292,7 @@
 <script src="pinyin.js"></script>
 <script src="data.js"></script>
 <script src="audio.js"></script>
+<script src="dict.js"></script>
 <script src="stories.js"></script>
 <script src="ime.js"></script>
 <script src="strokes.js"></script>

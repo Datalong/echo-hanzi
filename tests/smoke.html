@@ -43,7 +43,7 @@ async function waitReady(frame, url) {
       const w = frame.contentWindow;
       if (d.documentElement.getAttribute('data-app-ready') === '1' &&
           d.querySelector('#pinyin .ch') &&
-          w && w.Srs && w.Stats && w.Strokes && w.Ime && w.Stories) {
+          w && w.Srs && w.Stats && w.Strokes && w.Ime && w.Stories && w.Dict) {
         return d;
       }
       await sleep(20);
@@ -501,6 +501,25 @@ window.onload = async () => {
   modeSel.dispatchEvent(new win.Event('change', { bubbles: true }));
   await sleep(200);
   ok('故事：切回词模式隐藏故事视图', doc.getElementById('story-view').hidden && !doc.getElementById('field-level').hidden);
+
+  // ---------- 悬浮即时微词典 (Dict Tooltip) ----------
+  ok('词典：Dict 模块可用', typeof win.Dict === 'object' && typeof win.Dict.lookup === 'function');
+  const dInfo = win.Dict.lookup('喝');
+  ok('词典：查询部首与释义正常', dInfo && dInfo.radical === '口' && dInfo.collocations.length > 0,
+     '喝 -> 部首:' + dInfo.radical + ', 搭配=' + (dInfo.collocations || []).length);
+
+  // 触发大汉字点击，校验词典卡片浮出
+  doc.getElementById('hanzi').click();
+  await sleep(150);
+  ok('词典：点击汉字弹出词典卡片', !doc.getElementById('dict-tooltip').hidden);
+  ok('词典：显示拼音与部首', doc.getElementById('dt-py').textContent.length > 0 &&
+     doc.getElementById('dt-rad').textContent.includes('部首'));
+  ok('词典：渲染搭配词汇 tags', doc.querySelectorAll('#dt-collocs .dict-colloc-tag').length > 0);
+
+  // 敲字母打字时，词典卡片应自动无感隐藏
+  typeChars(win, 'a');
+  await sleep(80);
+  ok('词典：打字时自动隐藏不打扰', doc.getElementById('dict-tooltip').hidden);
 
   // ---------- PWA 离线能力 ----------
   const mRes = await fetch('../manifest.json');

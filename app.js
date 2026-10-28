@@ -37,6 +37,15 @@
     storyTitle: $('story-title'),
     storyIntro: $('story-intro'),
     storyParagraphs: $('story-paragraphs'),
+    dictTooltip: $('dict-tooltip'),
+    dtChar: $('dt-char'),
+    dtPy: $('dt-py'),
+    dtDef: $('dt-def'),
+    dtRad: $('dt-rad'),
+    dtRadDesc: $('dt-rad-desc'),
+    dtCollocs: $('dt-collocs'),
+    dtBtnSpeak: $('dt-btn-speak'),
+    dtBtnStroke: $('dt-btn-stroke'),
     tones: $('tg-tones'),
     ime: $('tg-ime'),
     imePopup: $('ime-popup'),
@@ -136,7 +145,9 @@
     strokeTimer: null,
     imeBufferText: '',
     imePage: 0,
-    imeList: []
+    imeList: [],
+    dictTimer: null,
+    dictChar: ''
   };
   var srsDb = window.Srs ? window.Srs.load() : {};
   var srsSaveTimer = null;
@@ -206,6 +217,75 @@
     return (table[settings.level] || table.hsk1).slice();
   }
 
+
+
+  /* ---------------- 悬浮即时微词典 ---------------- */
+
+  function hideDictTooltip() {
+    clearTimeout(state.dictTimer);
+    if (els.dictTooltip) els.dictTooltip.hidden = true;
+    state.dictChar = '';
+  }
+
+  function showDictTooltip(ch, anchorEl) {
+    if (!window.Dict || !els.dictTooltip || !ch) return;
+    var info = window.Dict.lookup(ch);
+    if (!info) return;
+
+    state.dictChar = info.char;
+    els.dtChar.textContent = info.char;
+    els.dtPy.textContent = info.pinyin;
+    els.dtDef.textContent = info.definition;
+    els.dtRad.textContent = '部首 ' + info.radical;
+    els.dtRadDesc.textContent = info.radicalMeaning;
+
+    els.dtCollocs.textContent = '';
+    (info.collocations || []).forEach(function (c) {
+      var tag = span('dict-colloc-tag', c);
+      els.dtCollocs.appendChild(tag);
+    });
+
+    // 锚定位置计算
+    if (anchorEl) {
+      var rect = anchorEl.getBoundingClientRect();
+      var cardRect = els.card.getBoundingClientRect();
+      var topPos = rect.bottom - cardRect.top + 8;
+      var leftPos = rect.left - cardRect.left + (rect.width / 2) - 135; // 居中
+
+      // 边界限制
+      if (leftPos < 10) leftPos = 10;
+      if (leftPos + 270 > cardRect.width - 10) leftPos = cardRect.width - 280;
+
+      els.dictTooltip.style.top = topPos + 'px';
+      els.dictTooltip.style.left = leftPos + 'px';
+    }
+
+    els.dictTooltip.hidden = false;
+  }
+
+  function setupDictHover(el, getCharFn) {
+    if (!el) return;
+    el.addEventListener('mouseenter', function (e) {
+      clearTimeout(state.dictTimer);
+      state.dictTimer = setTimeout(function () {
+        var ch = typeof getCharFn === 'function' ? getCharFn(el) : el.textContent.trim();
+        showDictTooltip(ch, el);
+      }, 250);
+    });
+
+    el.addEventListener('mouseleave', function () {
+      clearTimeout(state.dictTimer);
+      state.dictTimer = setTimeout(function () {
+        hideDictTooltip();
+      }, 350);
+    });
+
+    el.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var ch = typeof getCharFn === 'function' ? getCharFn(el) : el.textContent.trim();
+      showDictTooltip(ch, el);
+    });
+  }
 
   /* ---------------- 笔顺演示 ---------------- */
 
@@ -592,6 +672,7 @@
       if (isSentenceMode()) {
         var unit = span('unit' + (ch.punct ? ' is-punct' : ''));
         var hz = span('u-hz', ch.text);
+        if (!ch.punct) setupDictHover(hz);
         var py = span('u-py');
         ch.cells.forEach(function (cell, i) {
           var el = span('ch');
@@ -677,6 +758,12 @@
     paint();
     updateRunLine();
     updateStats();
+
+    // 词模式大字挂载词典
+    if (!isSentenceMode() && els.hanzi) {
+      setupDictHover(els.hanzi, function () { return getCurrentChar(); });
+    }
+
   }
 
   function paint() {
@@ -937,6 +1024,7 @@
     }
 
     closeImePopup();
+    hideDictTooltip();
     updateStats();
   }
 
@@ -977,6 +1065,7 @@
   }
 
   function handleChar(raw) {
+    hideDictTooltip();
     if (state.finished || state.lock || state.statsOpen || state.strokeOpen) return;
 
     var ch = String(raw).toLowerCase();
@@ -1066,6 +1155,12 @@
     paint();
     updateRunLine();
     updateStats();
+
+    // 词模式大字挂载词典
+    if (!isSentenceMode() && els.hanzi) {
+      setupDictHover(els.hanzi, function () { return getCurrentChar(); });
+    }
+
 
     var sessionId = state.sessionId;
     setTimeout(function () {
@@ -1318,6 +1413,7 @@
     state.lock = false;
 
     closeImePopup();
+    hideDictTooltip();
     els.result.hidden = true;
     els.typing.hidden = false;
     els.flash.textContent = '';
@@ -1489,6 +1585,33 @@
     }
 
     if (els.btnShowStroke) els.btnShowStroke.addEventListener('click', function () { openStrokeModal(); });
+
+    if (els.dtBtnSpeak) {
+      els.dtBtnSpeak.addEventListener('click', function () {
+        if (state.dictChar) speak(state.dictChar);
+      });
+    }
+    if (els.dtBtnStroke) {
+      els.dtBtnStroke.addEventListener('click', function () {
+        var ch = state.dictChar;
+        hideDictTooltip();
+        openStrokeModal(ch);
+      });
+    }
+    if (els.dictTooltip) {
+      els.dictTooltip.addEventListener('mouseenter', function () {
+        clearTimeout(state.dictTimer);
+      });
+      els.dictTooltip.addEventListener('mouseleave', function () {
+        hideDictTooltip();
+      });
+    }
+    document.addEventListener('click', function (e) {
+      if (els.dictTooltip && !els.dictTooltip.hidden && !els.dictTooltip.contains(e.target)) {
+        hideDictTooltip();
+      }
+    });
+
     if (els.btnStats) els.btnStats.addEventListener('click', openDashboard);
     if (els.btnDashFromResult) els.btnDashFromResult.addEventListener('click', openDashboard);
     if (els.btnDashBack) els.btnDashBack.addEventListener('click', closeDashboard);
