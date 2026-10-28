@@ -43,7 +43,7 @@ async function waitReady(frame, url) {
       const w = frame.contentWindow;
       if (d.documentElement.getAttribute('data-app-ready') === '1' &&
           d.querySelector('#pinyin .ch') &&
-          w && w.Srs && w.Stats && w.Strokes && w.Ime && w.Stories && w.Dict && w.I18n && w.Share) {
+          w && w.Srs && w.Stats && w.Strokes && w.Ime && w.Stories && w.Dict && w.I18n && w.Share && w.SpeechRec) {
         return d;
       }
       await sleep(20);
@@ -579,6 +579,39 @@ window.onload = async () => {
   doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   await sleep(150);
   ok('海报：Esc 关闭海报浮层', doc.getElementById('share-modal').hidden);
+
+  // ---------- 四大中心全局架构 (Listen / Speak / Read / Write) ----------
+  ok('四大中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 4);
+  ok('四大中心：SpeechRec 模块可用', typeof win.SpeechRec === 'object' && typeof win.SpeechRec.evaluatePronunciation === 'function');
+
+  // 1. 切换到 Speak 口语跟读中心
+  doc.getElementById('tab-speak').click();
+  await sleep(150);
+  ok('四大中心：进入跟读中心', !doc.getElementById('screen-speak').hidden && doc.getElementById('screen-typing').hidden);
+  ok('四大中心：跟读目标句子渲染', doc.getElementById('spk-target-hz').textContent.length > 0);
+  ok('四大中心：麦克风按钮就绪', !!doc.getElementById('btn-mic'));
+
+  // 模拟发音评估
+  const evalResult = win.SpeechRec.evaluatePronunciation('今天天气很好。', '今天天气很好');
+  ok('四大中心：发音评分准确率达到 100%', evalResult.accuracy === 100, evalResult.accuracy + '%');
+
+  // 2. 切换到 Listen 听力磨耳朵中心
+  doc.getElementById('tab-listen').click();
+  await sleep(150);
+  ok('四大中心：进入听力中心', !doc.getElementById('screen-listen').hidden && doc.getElementById('screen-speak').hidden);
+  ok('四大中心：听力汉字默认隐藏', doc.getElementById('lsn-target-hz').textContent.includes('？'));
+  ok('四大中心：听力输入框就绪', !!doc.getElementById('lsn-input'));
+
+  // 3. 切换到 Read 交互阅读中心
+  doc.getElementById('tab-read').click();
+  await sleep(150);
+  ok('四大中心：进入阅读中心', !doc.getElementById('screen-read').hidden);
+  ok('四大中心：文章段落列表渲染', doc.querySelectorAll('#read-article .read-para').length > 0);
+
+  // 4. 切回 Write 打字中心
+  doc.getElementById('tab-write').click();
+  await sleep(150);
+  ok('四大中心：切回打字机', !doc.getElementById('screen-typing').hidden && doc.getElementById('screen-read').hidden);
 
   // ---------- PWA 离线能力 ----------
   const mRes = await fetch('../manifest.json');

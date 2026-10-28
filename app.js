@@ -87,6 +87,36 @@
     btnShareClose: $('btn-share-close'),
     btnCopyPoster: $('btn-copy-poster'),
     btnDownloadPoster: $('btn-download-poster'),
+    tabWrite: $('tab-write'),
+    tabSpeak: $('tab-speak'),
+    tabListen: $('tab-listen'),
+    tabRead: $('tab-read'),
+    screenSpeak: $('screen-speak'),
+    screenListen: $('screen-listen'),
+    screenRead: $('screen-read'),
+    spkRunPos: $('spk-run-pos'),
+    spkTargetHz: $('spk-target-hz'),
+    spkTargetPy: $('spk-target-py'),
+    spkTargetEn: $('spk-target-en'),
+    spkResultBox: $('spk-result-box'),
+    spkTrans: $('spk-trans'),
+    spkScoreVal: $('spk-score-val'),
+    spkScoreDesc: $('spk-score-desc'),
+    btnSpkListen: $('btn-spk-listen'),
+    btnMic: $('btn-mic'),
+    micLabel: $('mic-label'),
+    btnSpkNext: $('btn-spk-next'),
+    lsnRunPos: $('lsn-run-pos'),
+    btnLsnSlow: $('btn-lsn-slow'),
+    btnLsnPlay: $('btn-lsn-play'),
+    lsnTargetHz: $('lsn-target-hz'),
+    lsnTargetEn: $('lsn-target-en'),
+    lsnInput: $('lsn-input'),
+    btnLsnCheck: $('btn-lsn-check'),
+    lsnFeedback: $('lsn-feedback'),
+    readStoryTitle: $('read-story-title'),
+    readStoryIntro: $('read-story-intro'),
+    readArticle: $('read-article'),
     strokeModal: $('stroke-modal'),
     strokeChar: $('stroke-char'),
     strokeInfo: $('stroke-info'),
@@ -157,7 +187,11 @@
     imeList: [],
     dictTimer: null,
     dictChar: '',
-    shareCanvas: null
+    shareCanvas: null,
+    currentHub: 'write',
+    speakIndex: 0,
+    listenIndex: 0,
+    readStoryId: 'beijing-trip'
   };
   var srsDb = window.Srs ? window.Srs.load() : {};
   var srsSaveTimer = null;
@@ -183,8 +217,20 @@
       els.tgLang.title = (lang === 'zh-CN' ? 'Switch to English' : '切换为中文');
     }
 
-    // 顶栏 Label
     var q = function(id, text) { var el = $(id); if (el) el.textContent = text; };
+
+    q('tab-write', t('navWrite'));
+    q('tab-speak', t('navSpeak'));
+    q('tab-listen', t('navListen'));
+    q('tab-read', t('navRead'));
+    q('btn-spk-listen', t('btnSpkListen'));
+    q('btn-spk-next', t('btnSpkNext'));
+    q('btn-lsn-slow', t('lsnSpeedSlow'));
+    q('btn-lsn-play', t('lsnPlay'));
+    q('btn-lsn-check', t('lsnCheck'));
+    if (els.lsnInput) els.lsnInput.placeholder = t('lsnPlaceholder');
+
+    // 顶栏 Label
     var labelEls = document.querySelectorAll('.sfield-label');
     if (labelEls.length >= 4) {
       labelEls[0].textContent = t('lblMode');
@@ -332,6 +378,189 @@
 
 
 
+
+
+  /* ---------------- 四大核心沉浸中心路由 ---------------- */
+
+  function switchHub(hub) {
+    state.currentHub = hub;
+    document.querySelectorAll('.hub-tab').forEach(function (tab) {
+      tab.classList.toggle('is-active', tab.dataset.hub === hub);
+    });
+
+    els.typing.hidden = (hub !== 'write');
+    els.screenSpeak.hidden = (hub !== 'speak');
+    els.screenListen.hidden = (hub !== 'listen');
+    els.screenRead.hidden = (hub !== 'read');
+
+    // 打字专属控件仅在 write hub 显示
+    var writeControls = document.querySelector('.controls');
+    if (writeControls) writeControls.hidden = (hub !== 'write');
+    els.result.hidden = true;
+    if (els.stats) els.stats.hidden = true;
+
+    if (hub === 'write') {
+      focusCatcher();
+    } else if (hub === 'speak') {
+      renderSpeakScreen();
+    } else if (hub === 'listen') {
+      renderListenScreen();
+    } else if (hub === 'read') {
+      renderReadScreen();
+    }
+  }
+
+  /* ---------------- 🎙️ 跟读中心 (Speak) ---------------- */
+
+  function getSentencePool() {
+    return (window.SENTENCE_LISTS && window.SENTENCE_LISTS.all) || [];
+  }
+
+  function renderSpeakScreen() {
+    var pool = getSentencePool();
+    if (!pool.length) return;
+    if (state.speakIndex >= pool.length) state.speakIndex = 0;
+    var item = pool[state.speakIndex];
+
+    els.spkRunPos.textContent = (state.speakIndex + 1) + ' / ' + pool.length + ' ' + t('unitSentence');
+    els.spkTargetHz.textContent = item.hanzi;
+    els.spkTargetPy.textContent = item.pinyin.replace(/[，。！？]/g, ' ');
+    els.spkTargetEn.textContent = item.english;
+    els.spkResultBox.hidden = true;
+
+    if (els.micLabel) els.micLabel.textContent = t('btnMicIdle');
+    if (els.btnMic) els.btnMic.classList.remove('is-recording');
+  }
+
+  function setupSpeechRec() {
+    if (!window.SpeechRec) return;
+    window.SpeechRec.setCallbacks({
+      onTranscript: function (text) {
+        if (!els.spkTrans) return;
+        els.spkTrans.textContent = text;
+        els.spkResultBox.hidden = false;
+      },
+      onResult: function (evalRes) {
+        if (!els.spkResultBox) return;
+        els.spkResultBox.hidden = false;
+        els.spkTrans.textContent = '';
+
+        (evalRes.charStatuses || []).forEach(function (cs) {
+          var sp = span('spk-ch is-' + cs.status, cs.ch);
+          els.spkTrans.appendChild(sp);
+        });
+
+        els.spkScoreVal.textContent = evalRes.accuracy + '%';
+        if (evalRes.accuracy >= 90) {
+          els.spkScoreDesc.textContent = t('spkPerfect');
+          if (settings.sound) window.Sound.success();
+        } else if (evalRes.accuracy >= 70) {
+          els.spkScoreDesc.textContent = t('spkGood');
+          if (settings.sound) window.Sound.click();
+        } else {
+          els.spkScoreDesc.textContent = t('spkTryAgain');
+          if (settings.sound) window.Sound.error();
+        }
+      },
+      onStateChange: function (isRec) {
+        if (!els.btnMic) return;
+        els.btnMic.classList.toggle('is-recording', isRec);
+        if (els.micLabel) {
+          els.micLabel.textContent = isRec ? t('btnMicRecording') : t('btnMicIdle');
+        }
+      },
+      onError: function (err) {
+        flash('麦克风识别错误: ' + err, 'bad');
+      }
+    });
+  }
+
+  /* ---------------- 🎧 听力中心 (Listen) ---------------- */
+
+  var isListenSlow = false;
+
+  function renderListenScreen() {
+    var pool = getSentencePool();
+    if (!pool.length) return;
+    if (state.listenIndex >= pool.length) state.listenIndex = 0;
+    var item = pool[state.listenIndex];
+
+    els.lsnRunPos.textContent = (state.listenIndex + 1) + ' / ' + pool.length + ' ' + t('unitSentence');
+    els.lsnTargetHz.textContent = item.hanzi.replace(/[^，。！？]/g, '？');
+    els.lsnTargetEn.textContent = item.english;
+    els.lsnInput.value = '';
+    els.lsnFeedback.hidden = true;
+  }
+
+  function playListenAudio() {
+    var pool = getSentencePool();
+    var item = pool[state.listenIndex];
+    if (item && window.Speech) {
+      window.Speech.speak(item.hanzi, isListenSlow ? 0.7 : 0.85);
+    }
+  }
+
+  function checkListenAnswer() {
+    var pool = getSentencePool();
+    var item = pool[state.listenIndex];
+    if (!item) return;
+
+    var val = (els.lsnInput.value || '').toLowerCase().trim();
+    var targetHz = item.hanzi.replace(/[，。！？]/g, '').trim();
+    var targetPy = window.Pinyin ? window.Pinyin.toPlain(item.pinyin).replace(/[^a-z]/g, '') : '';
+    var inputClean = val.replace(/[^a-z一-龥]/g, '');
+
+    var isCorrect = (val === targetHz) || (inputClean === targetPy);
+    if (isCorrect) {
+      els.lsnTargetHz.textContent = item.hanzi;
+      els.lsnFeedback.textContent = t('lsnCorrect');
+      els.lsnFeedback.className = 'listen-feedback';
+      els.lsnFeedback.hidden = false;
+      if (settings.sound) window.Sound.success();
+      setTimeout(function () {
+        state.listenIndex++;
+        renderListenScreen();
+      }, 1200);
+    } else {
+      els.lsnFeedback.textContent = t('lsnWrong');
+      els.lsnFeedback.className = 'listen-feedback is-bad';
+      els.lsnFeedback.hidden = false;
+      if (settings.sound) window.Sound.error();
+    }
+  }
+
+  /* ---------------- 📖 阅读中心 (Read) ---------------- */
+
+  function renderReadScreen() {
+    if (!window.Stories || !els.readArticle) return;
+    var st = window.Stories.getById(state.readStoryId);
+    els.readStoryTitle.textContent = st.title;
+    els.readStoryIntro.textContent = st.englishTitle + ' · ' + st.intro;
+    els.readArticle.textContent = '';
+
+    st.sentences.forEach(function (s) {
+      var p = document.createElement('div');
+      p.className = 'read-para';
+
+      // 汉字支持划词与即时微词典
+      Array.from(s.hanzi).forEach(function (ch) {
+        var sp = span('read-ch', ch);
+        if (!/[，。！？\s]/.test(ch)) {
+          setupDictHover(sp);
+        }
+        p.appendChild(sp);
+      });
+
+      var en = span('story-line-en', s.english);
+      p.appendChild(en);
+
+      p.addEventListener('click', function () {
+        if (window.Speech) window.Speech.speak(s.hanzi);
+      });
+
+      els.readArticle.appendChild(p);
+    });
+  }
 
   /* ---------------- 战绩海报分享 ---------------- */
 
@@ -1714,6 +1943,7 @@
         if (window.I18n) {
           window.I18n.toggleLanguage();
           applyTranslations();
+    setupSpeechRec();
           focusCatcher();
         }
       });
@@ -1830,6 +2060,61 @@
             flash('已自动为您下载海报图片', 'good');
           });
         }
+      });
+    }
+
+
+    // Hub 导航绑定
+    document.querySelectorAll('.hub-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        switchHub(btn.dataset.hub);
+      });
+    });
+
+    // Speak 绑定
+    if (els.btnSpkListen) {
+      els.btnSpkListen.addEventListener('click', function () {
+        var pool = getSentencePool();
+        var item = pool[state.speakIndex];
+        if (item && window.Speech) window.Speech.speak(item.hanzi, 0.82);
+      });
+    }
+    if (els.btnMic) {
+      els.btnMic.addEventListener('click', function () {
+        if (!window.SpeechRec) return;
+        var pool = getSentencePool();
+        var item = pool[state.speakIndex];
+        if (window.SpeechRec.isListening()) {
+          window.SpeechRec.stopListening();
+        } else if (item) {
+          window.SpeechRec.startListening(item.hanzi);
+        }
+      });
+    }
+    if (els.btnSpkNext) {
+      els.btnSpkNext.addEventListener('click', function () {
+        state.speakIndex++;
+        renderSpeakScreen();
+      });
+    }
+
+    // Listen 绑定
+    if (els.btnLsnPlay) {
+      els.btnLsnPlay.addEventListener('click', playListenAudio);
+    }
+    if (els.btnLsnSlow) {
+      els.btnLsnSlow.addEventListener('click', function () {
+        isListenSlow = !isListenSlow;
+        els.btnLsnSlow.classList.toggle('is-active', isListenSlow);
+        playListenAudio();
+      });
+    }
+    if (els.btnLsnCheck) {
+      els.btnLsnCheck.addEventListener('click', checkListenAnswer);
+    }
+    if (els.lsnInput) {
+      els.lsnInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') checkListenAnswer();
       });
     }
 
@@ -2010,6 +2295,7 @@
   function bootInner() {
     applySettingsToUI();
     applyTranslations();
+    setupSpeechRec();
     bindSettings();
     bindInput();
     if (!window.Speech.supported) {

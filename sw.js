@@ -6,6 +6,7 @@ var PRECACHE_URLS = [
   './styles.css',
   './i18n.js',
   './share.js',
+  './speech-rec.js',
   './pinyin.js',
   './ime.js',
   './dict.js',

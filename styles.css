@@ -1512,3 +1512,277 @@ kbd {
   gap: 10px;
   justify-content: flex-end;
 }
+
+/* ---------------- 四大中心全局导航 ---------------- */
+
+.hub-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.hub-tab {
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hub-tab:hover {
+  color: var(--text);
+  background: var(--bg-soft);
+}
+
+.hub-tab.is-active {
+  color: var(--text);
+  background: var(--bg-soft);
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* ---------------- 🎙️ 跟读中心 (Speak) ---------------- */
+
+.speak-screen, .listen-screen, .read-screen {
+  gap: 16px;
+  justify-content: center;
+}
+
+.speak-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.speak-card {
+  padding: 36px 24px;
+  gap: 14px;
+}
+
+.speak-hz {
+  font-family: "Songti SC", "Noto Serif SC", serif;
+  font-size: clamp(32px, 6vw, 48px);
+  color: var(--text);
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.speak-py {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 18px;
+  color: var(--accent);
+  text-align: center;
+}
+
+.speak-en {
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.speak-action-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.mic-btn {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--accent);
+  color: var(--bg);
+  padding: 12px 28px;
+  border-radius: 99px;
+  font-size: 16px;
+  font-weight: 650;
+  box-shadow: 0 8px 24px rgba(94, 233, 181, 0.35);
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mic-btn:hover {
+  transform: scale(1.04);
+  filter: brightness(1.08);
+}
+
+.mic-btn.is-recording {
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 0 0 10px rgba(255, 107, 107, 0.25);
+  animation: micPulse 1.2s infinite;
+}
+
+@keyframes micPulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.5); }
+  70% { box-shadow: 0 0 0 16px rgba(255, 107, 107, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); }
+}
+
+.speak-result-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+
+.speak-trans {
+  display: flex;
+  gap: 4px;
+  font-family: "Songti SC", "Noto Serif SC", serif;
+  font-size: 26px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.spk-ch.is-ok { color: var(--accent); }
+.spk-ch.is-err { color: var(--danger); }
+
+.speak-score {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.spk-score-val {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.spk-score-desc {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---------------- 🎧 听力中心 (Listen) ---------------- */
+
+.listen-card {
+  padding: 36px 24px;
+  gap: 16px;
+  align-items: center;
+}
+
+.listen-sound-wave {
+  font-size: 14px;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+}
+
+.listen-hz-hidden {
+  font-family: "Songti SC", "Noto Serif SC", serif;
+  font-size: 38px;
+  letter-spacing: 0.2em;
+  color: var(--faint);
+  user-select: none;
+}
+
+.listen-en {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.listen-input-box {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 400px;
+  margin-top: 6px;
+}
+
+.listen-input {
+  flex: 1;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 15px;
+  outline: none;
+}
+
+.listen-input:focus {
+  border-color: var(--accent);
+}
+
+.listen-feedback {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.listen-feedback.is-bad {
+  color: var(--danger);
+}
+
+/* ---------------- 📖 阅读中心 (Read) ---------------- */
+
+.read-header {
+  text-align: center;
+}
+
+.read-title {
+  margin: 0;
+  font-family: "Songti SC", "Noto Serif SC", serif;
+  font-size: 28px;
+  color: var(--text);
+}
+
+.read-intro {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.read-card {
+  padding: 30px;
+  text-align: left;
+}
+
+.read-article {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.read-para {
+  font-family: "Songti SC", "Noto Serif SC", serif;
+  font-size: 19px;
+  line-height: 1.8;
+  color: var(--text);
+  letter-spacing: 0.02em;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+}
+
+.read-para:hover {
+  background: var(--bg-soft);
+}
+
+@media (max-width: 780px) {
+  .hub-nav {
+    order: -1;
+    width: 100%;
+    justify-content: space-around;
+  }
+}

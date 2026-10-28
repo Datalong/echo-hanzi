@@ -23,6 +23,14 @@
       <span class="brand-name">Echo Hanzi</span>
     </div>
 
+    <!-- 四大核心中心全局导航 -->
+    <nav class="hub-nav" id="hub-nav">
+      <button class="hub-tab is-active" id="tab-write" type="button" data-hub="write">⌨️ 打字</button>
+      <button class="hub-tab" id="tab-speak" type="button" data-hub="speak">🎙️ 跟读</button>
+      <button class="hub-tab" id="tab-listen" type="button" data-hub="listen">🎧 听力</button>
+      <button class="hub-tab" id="tab-read" type="button" data-hub="read">📖 阅读</button>
+    </nav>
+
     <div class="controls">
       <label class="sfield">
         <span class="sfield-label">模式</span>
@@ -81,6 +89,71 @@
       <button class="toggle iconly" id="tg-theme" type="button" title="切换主题">◐</button>
     </div>
   </header>
+
+  <!-- 🎙️ 口语跟读中心 (Speak) -->
+  <section class="screen speak-screen" id="screen-speak" hidden>
+    <div class="speak-header">
+      <span class="runline" id="spk-run-pos">1 / 10 句</span>
+      <button class="ghost-btn" id="btn-spk-listen" type="button">🔊 示范发音</button>
+    </div>
+
+    <div class="card speak-card">
+      <div class="speak-hz" id="spk-target-hz">今天天气很好。</div>
+      <div class="speak-py" id="spk-target-py">jīntiān tiānqì hěn hǎo</div>
+      <div class="speak-en" id="spk-target-en">The weather is very nice today.</div>
+
+      <!-- 用户跟读转录结果实时显示与评分 -->
+      <div class="speak-result-box" id="spk-result-box" hidden>
+        <div class="speak-trans" id="spk-trans"></div>
+        <div class="speak-score" id="spk-score">
+          <span class="spk-score-val" id="spk-score-val">100%</span>
+          <span class="spk-score-desc" id="spk-score-desc">发音标准！</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="speak-action-bar">
+      <button class="mic-btn" id="btn-mic" type="button" title="点击开始跟读">
+        <span class="mic-icon">🎙️</span>
+        <span class="mic-label" id="mic-label">点击开口说</span>
+      </button>
+      <button class="ghost-btn" id="btn-spk-next" type="button">下一句</button>
+    </div>
+  </section>
+
+  <!-- 🎧 听力磨耳朵中心 (Listen) -->
+  <section class="screen listen-screen" id="screen-listen" hidden>
+    <div class="speak-header">
+      <span class="runline" id="lsn-run-pos">1 / 10 句</span>
+      <div class="lsn-speed-ctrl">
+        <button class="toggle" id="btn-lsn-slow" type="button">0.7x 慢速</button>
+        <button class="toggle" id="btn-lsn-play" type="button">🔊 播放</button>
+      </div>
+    </div>
+
+    <div class="card listen-card">
+      <div class="listen-sound-wave">🎧 仔细听发音...</div>
+      <div class="listen-hz-hidden" id="lsn-target-hz">？？？？</div>
+      <div class="listen-en" id="lsn-target-en">点击上方播放听原声</div>
+      <div class="listen-input-box">
+        <input class="listen-input" id="lsn-input" type="text" placeholder="输入你听到的拼音或汉字..." autocomplete="off" />
+        <button class="primary-btn" id="btn-lsn-check" type="button">校对</button>
+      </div>
+      <div class="listen-feedback" id="lsn-feedback" hidden></div>
+    </div>
+  </section>
+
+  <!-- 📖 交互阅读中心 (Read) -->
+  <section class="screen read-screen" id="screen-read" hidden>
+    <div class="read-header">
+      <h2 class="read-title" id="read-story-title">第一次去北京</h2>
+      <span class="read-intro" id="read-story-intro">First Trip to Beijing</span>
+    </div>
+
+    <div class="card read-card">
+      <div class="read-article" id="read-article"></div>
+    </div>
+  </section>
 
   <main class="screen" id="screen-typing">
 
@@ -326,6 +399,7 @@
 <script src="pinyin.js"></script>
 <script src="data.js"></script>
 <script src="audio.js"></script>
+<script src="speech-rec.js"></script>
 <script src="share.js"></script>
 <script src="i18n.js"></script>
 <script src="dict.js"></script>
