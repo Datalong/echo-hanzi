@@ -21,15 +21,31 @@ function typeChars(win, str) {
     catcher.dispatchEvent(new win.Event('input', { bubbles: true }));
   }
 }
-/** 等 iframe 内的应用真正启动（脚本绑定完成）再断言 */
-async function waitReady(frame) {
-  for (let i = 0; i < 60; i++) {
+/** 等 iframe 里的应用真正就绪：先等 load 事件，再等首题渲染出来 */
+function waitLoad(frame) {
+  return new Promise(resolve => {
     const d = frame.contentDocument;
-    if (d && d.readyState === 'complete' && d.getElementById('catcher') &&
-        d.querySelector('#pinyin .ch')) {
-      return d;
+    if (d && d.readyState === 'complete' && d.getElementById('catcher')) return resolve();
+    frame.addEventListener('load', () => resolve(), { once: true });
+  });
+}
+
+async function waitReady(frame, url) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await waitLoad(frame);
+    let d = frame.contentDocument;
+    // 应用启动完成会打上 data-app-ready="1"；没有就说明有脚本没跑起来（虚拟时钟下偶发），重载一次
+    for (let i = 0; i < 120 && d; i++) {
+      if (d.documentElement.getAttribute('data-app-ready') === '1' &&
+          d.querySelector('#pinyin .ch')) {
+        return d;
+      }
+      await sleep(20);
+      d = frame.contentDocument;
     }
-    await sleep(50);
+    if (!url) return d;
+    frame.src = url + (url.indexOf('?') === -1 ? '?' : '&') + 'retry=' + attempt + '-' + Date.now();
+    await sleep(60);
   }
   return frame.contentDocument;
 }
@@ -58,10 +74,19 @@ window.onerror = (msg, src, line, col) => {
 window.onload = async () => {
   try {
   const f = document.getElementById('f');
-  const doc0 = await waitReady(f);
+  const doc0 = await waitReady(f, '../index.html?t=' + Date.now());
   await sleep(100);
   const win = f.contentWindow, doc = doc0;
+  win.addEventListener('error', ev => {
+    log.push('FAIL 应用异常 :: ' + (ev.message || ev.error) + ' @' + (ev.lineno || '?'));
+  });
 
+  log.push('DEBUG readyState=' + doc.readyState +
+           ' scripts=' + doc.querySelectorAll('script').length +
+           ' pinyinCells=' + doc.querySelectorAll('#pinyin .ch').length +
+           ' hanzi=' + doc.getElementById('hanzi').textContent +
+           ' srs=' + (typeof win.Srs) + ' stats=' + (typeof win.Stats) +
+           ' bootError=' + (doc.documentElement.getAttribute('data-boot-error') || '-'));
   ok('渲染首词汉字', doc.getElementById('hanzi').textContent.trim().length > 0, doc.getElementById('hanzi').textContent);
   ok('生成 pinyin cells', doc.querySelectorAll('#pinyin .ch').length > 0, pinyinText(win));
   ok('进度条存在', doc.querySelectorAll('#progress-fill').length === 1);
@@ -237,7 +262,7 @@ window.onload = async () => {
   const f2 = document.createElement('iframe');
   f2.width = 700; f2.height = 560; f2.src = '../index.html?srs=' + Date.now();
   document.body.appendChild(f2);
-  const d2ready = await waitReady(f2);
+  const d2ready = await waitReady(f2, '../index.html?srs=' + Date.now());
   await sleep(100);
   const d2 = d2ready || f2.contentDocument;
   ok('SRS：第二实例已加载', !!d2 && !!d2.getElementById('hanzi'), 'doc=' + !!d2);
@@ -249,6 +274,54 @@ window.onload = async () => {
   ok('SRS：顶栏显示待复习数', !d2.getElementById('run-due').hidden &&
      /待复习\s*1/.test(d2.getElementById('run-due').textContent),
      d2.getElementById('run-due').textContent);
+
+  // ---------- 数据看板 ----------
+  let statsStore = null;
+  try { statsStore = JSON.parse(localStorage.getItem('echo-hanzi:stats:v1') || 'null'); } catch (e) { statsStore = null; }
+  ok('看板数据：记录了每轮成绩', !!statsStore && statsStore.sessions.length >= 1,
+     statsStore ? statsStore.sessions.length + ' 轮' : 'missing');
+  ok('看板数据：记录了音节样本', !!statsStore && statsStore.syllables > 0,
+     statsStore ? statsStore.syllables + ' 个音节' : 'missing');
+
+  doc.getElementById('btn-stats').click();
+  await sleep(150);
+
+  ok('看板：打开后隐藏练习页', !doc.getElementById('screen-stats').hidden && doc.getElementById('screen-typing').hidden);
+  ok('看板：概况卡有数据', doc.querySelectorAll('#dash-summary .stat').length === 4,
+     doc.querySelectorAll('#dash-summary .stat').length + ' cards');
+  ok('看板：趋势图渲染', !!doc.querySelector('#dash-trend svg'), doc.querySelector('#dash-trend svg') ? 'svg ok' : 'no svg');
+  ok('看板：声母/韵母分栏', doc.querySelectorAll('#dash-errors .bar-col').length === 2);
+  ok('看板：错误条有样本', doc.querySelectorAll('#dash-errors .bar-row').length > 0,
+     doc.querySelectorAll('#dash-errors .bar-row').length + ' 条');
+  const toneEls = doc.querySelectorAll('#dash-tones .bar-row');
+  ok('看板：声调区有内容', toneEls.length > 0 || !!doc.querySelector('#dash-tones .panel-empty'),
+     toneEls.length + ' 条');
+  ok('看板：掌握分布图例齐全',
+     doc.querySelectorAll('#dash-mastery .mastery-key').length === 4,
+     doc.querySelectorAll('#dash-mastery .mastery-key').length + ' keys');
+  ok('看板：掌握分布合计等于题量',
+     /共\s*338\s*词句/.test(doc.getElementById('dash-mastery-sub').textContent),
+     doc.getElementById('dash-mastery-sub').textContent);
+
+  // 看板打开时打字不应影响进度
+  const posBeforeDash = doc.getElementById('run-pos').textContent;
+  typeChars(win, 'abc');
+  await sleep(80);
+  ok('看板：打开时输入被忽略', doc.getElementById('run-pos').textContent === posBeforeDash);
+
+  // Esc 返回
+  doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await sleep(120);
+  ok('看板：Esc 返回练习', doc.getElementById('screen-stats').hidden && !doc.getElementById('screen-typing').hidden);
+
+  // 清空
+  win.confirm = () => true;
+  doc.getElementById('btn-stats').click();
+  await sleep(100);
+  doc.getElementById('btn-dash-reset').click();
+  await sleep(150);
+  ok('看板：清空后回到空状态', !doc.getElementById('dash-empty').hidden,
+     'empty visible=' + !doc.getElementById('dash-empty').hidden);
 
   } catch (err) {
     log.push('FAIL 用例中断 :: ' + (err && err.message ? err.message : String(err)));

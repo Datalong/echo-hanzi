@@ -39,6 +39,19 @@
     runDue: $('run-due'),
     cardBadge: $('card-badge'),
     rsDue: $('rs-due'),
+    stats: $('screen-stats'),
+    dashSummary: $('dash-summary'),
+    dashTrend: $('dash-trend'),
+    dashTrendSub: $('dash-trend-sub'),
+    dashMasterySub: $('dash-mastery-sub'),
+    dashErrors: $('dash-errors'),
+    dashTones: $('dash-tones'),
+    dashMastery: $('dash-mastery'),
+    dashEmpty: $('dash-empty'),
+    btnStats: $('btn-stats'),
+    btnDashBack: $('btn-dash-back'),
+    btnDashReset: $('btn-dash-reset'),
+    btnDashFromResult: $('btn-dash-from-result'),
     card: $('card'),
     hanzi: $('hanzi'),
     pinyin: $('pinyin'),
@@ -86,10 +99,14 @@
     lock: false,
     dueCount: 0,
     reviewKeys: {},
-    sessionId: 0
+    sessionId: 0,
+    syllables: [],      // 本题的音节（含是否出错），用于统计
+    statsOpen: false
   };
   var srsDb = window.Srs ? window.Srs.load() : {};
   var srsSaveTimer = null;
+  var statsDb = window.Stats ? window.Stats.load() : null;
+  var statsSaveTimer = null;
   var ticker = null;
 
   /* ---------------- 设置 ---------------- */
@@ -198,19 +215,26 @@
     var chars = [];
     var flat = [];
 
+    var syllables = [];
+
     if (!isSentenceMode()) {
-      var cells = window.Pinyin.buildCells(item.pinyin, tones);
-      var ci = 0;
-      cells.forEach(function (cell) {
-        cell.charIndex = 0;
-        flat.push(cell);
+      var parsed = window.Pinyin.parse(item.pinyin);
+      parsed.forEach(function (syl) {
+        var cellList = window.Pinyin.cellsForSyllable(syl, tones);
+        var info = { letters: syl.letters, tone: syl.tone, hadError: false };
+        cellList.forEach(function (cell) {
+          cell.charIndex = 0;
+          cell.syl = info;
+          flat.push(cell);
+        });
+        syllables.push(info);
       });
-      chars.push({ text: item.hanzi, cells: cells, start: 0, end: flat.length, punct: false });
-      return { chars: chars, cells: flat };
+      chars.push({ text: item.hanzi, cells: flat.slice(), start: 0, end: flat.length, punct: false });
+      return { chars: chars, cells: flat, syllables: syllables };
     }
 
     // 句模式：先分离音节与标点键位，再逐字配对
-    var syllables = [];
+    var syllableTokens = [];
     var punctKeys = [];
     item.pinyin
       .split(/([，。！？：；、,.!?;:]+)/)
@@ -219,7 +243,7 @@
         if (/^[，。！？：；、,.!?;:]+$/.test(piece)) {
           Array.from(piece).forEach(function (mark) { punctKeys.push(PUNCT_KEYS[mark] || mark); });
         } else {
-          window.Pinyin.parse(piece).forEach(function (syl) { syllables.push(syl); });
+          window.Pinyin.parse(piece).forEach(function (syl) { syllableTokens.push(syl); });
         }
       });
 
@@ -229,16 +253,26 @@
       var start = flat.length;
       var isPunct = PUNCT_RE.test(ch);
       var cells;
+      var token = null;
+
       if (isPunct) {
         cells = [punctCell(punctKeys[pi++] || PUNCT_KEYS[ch] || ch)];
       } else {
-        var syl = syllables[si++];
-        cells = syl ? window.Pinyin.cellsForSyllable(syl, tones) : [];
+        token = syllableTokens[si++] || null;
+        cells = token ? window.Pinyin.cellsForSyllable(token, tones) : [];
       }
+
       var charIndex = chars.length;
+      var info = null;
+      if (token) {
+        info = { letters: token.letters, tone: token.tone, hadError: false };
+        syllables.push(info);
+      }
+
       cells.forEach(function (cell, k) {
         cell.charIndex = charIndex;
         cell.group = k;
+        if (info) cell.syl = info;
         flat.push(cell);
       });
       chars.push({
@@ -250,7 +284,7 @@
       });
     });
 
-    return { chars: chars, cells: flat };
+    return { chars: chars, cells: flat, syllables: syllables };
   }
 
   /* ---------------- DOM 构建（每题只构建一次） ---------------- */
@@ -307,6 +341,7 @@
     var built = buildItem(item);
     state.chars = built.chars;
     state.cells = built.cells;
+    state.syllables = built.syllables || [];
     state.pos = 0;
     state.wordHadError = false;
     state.lock = false;
@@ -448,6 +483,24 @@
     srsSaveTimer = setTimeout(function () { window.Srs.save(srsDb); }, 800);
   }
 
+  function flash(message, kind) {
+    if (!els.flash) return;
+    els.flash.textContent = message;
+    els.flash.className = 'flash' + (kind ? ' is-' + kind : '');
+    clearTimeout(flash._timer);
+    flash._timer = setTimeout(function () { els.flash.textContent = ''; }, 1600);
+  }
+
+  function persistStats(immediate) {
+    if (!window.Stats) return;
+    clearTimeout(statsSaveTimer);
+    if (immediate) {
+      window.Stats.save(statsDb);
+      return;
+    }
+    statsSaveTimer = setTimeout(function () { window.Stats.save(statsDb); }, 800);
+  }
+
   function ensureStarted() {
     if (state.startedAt || state.finished) return;
     state.startedAt = Date.now();
@@ -455,7 +508,7 @@
   }
 
   function handleChar(raw) {
-    if (state.finished || state.lock) return;
+    if (state.finished || state.lock || state.statsOpen) return;
 
     var ch = String(raw).toLowerCase();
     if (ch === ' ' || ch === "'" || ch === '\u2019') return;  // 空格/分隔符跳过
@@ -483,6 +536,7 @@
       state.wordHadError = true;
       state.streak = 0;
       cell.err = true;
+      if (cell.syl) cell.syl.hadError = true;
       if (settings.sound) window.Sound.error();
       paint();
       setTimeout(function () {
@@ -513,6 +567,10 @@
       window.Srs.schedule(srsDb, item, !state.wordHadError);
       persistSrs();
     }
+    if (window.Stats && state.syllables.length) {
+      window.Stats.recordSyllables(statsDb, state.syllables);
+      persistStats();
+    }
 
     if (settings.sound) window.Sound.success();
     speak(item.hanzi);
@@ -535,10 +593,208 @@
     }, settings.echo ? 750 : 240);
   }
 
+
+  /* ---------------- 数据看板 ---------------- */
+
+  function masteryBuckets() {
+    var pool = (window.WORD_LISTS.all || []).concat(window.SENTENCE_LISTS ? window.SENTENCE_LISTS.all : []);
+    var out = { fresh: 0, learning: 0, solid: 0, mastered: 0, total: pool.length };
+    pool.forEach(function (item) {
+      var rec = window.Srs ? srsDb[window.Srs.keyOf(item)] : null;
+      if (!rec) { out.fresh++; return; }
+      if (rec.interval >= 21) out.mastered++;
+      else if (rec.interval >= 4) out.solid++;
+      else out.learning++;
+    });
+    return out;
+  }
+
+  function sparkline(values) {
+    if (!values.length) return '';
+    var w = 100;
+    var h = 40;
+    var max = Math.max.apply(null, values);
+    var min = Math.min.apply(null, values);
+    if (max === min) max = min + 1;
+    var pts = values.map(function (v, i) {
+      var x = values.length === 1 ? w / 2 : (i / (values.length - 1)) * w;
+      var y = h - 3 - ((v - min) / (max - min)) * (h - 8);
+      return x.toFixed(2) + ' ' + y.toFixed(2);
+    });
+    var line = 'M' + pts.join(' L');
+    var area = line + ' L' + w + ' ' + h + ' L0 ' + h + ' Z';
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-label="速度趋势">' +
+      '<path class="trend-area" d="' + area + '"></path>' +
+      '<path class="trend-line" d="' + line + '" vector-effect="non-scaling-stroke"></path>' +
+      '</svg>';
+  }
+
+  function barRow(label, rate, attempts, errors) {
+    var row = document.createElement('div');
+    row.className = 'bar-row';
+
+    var key = span('bar-key', label);
+
+    var track = document.createElement('span');
+    track.className = 'bar-track';
+    var fill = span('bar-fill');
+    fill.style.width = Math.max(2, Math.round(rate * 100)) + '%';
+    if (rate >= 0.25) fill.classList.add('is-high');
+    else if (rate >= 0.12) fill.classList.add('is-mid');
+    track.appendChild(fill);
+
+    var val = span('bar-val', Math.round(rate * 100) + '%');
+    row.appendChild(key);
+    row.appendChild(track);
+    row.appendChild(val);
+    row.title = label + '：' + errors + ' / ' + attempts + ' 个音节出错';
+    return row;
+  }
+
+  function renderDashboard() {
+    if (!window.Stats || !els.dashSummary) return;
+
+    var sum = window.Stats.summary(statsDb);
+    var mastery = masteryBuckets();
+    var hasData = sum.sessions > 0 || sum.syllables > 0;
+    if (els.dashEmpty) els.dashEmpty.hidden = hasData;
+
+    // 概况
+    els.dashSummary.textContent = '';
+    [
+      ['练习轮数', String(sum.sessions)],
+      ['累计音节', String(sum.syllables)],
+      ['平均 CPM', String(sum.avgCpm)],
+      ['平均正确率', sum.avgAcc ? sum.avgAcc + '%' : '–']
+    ].forEach(function (pair) {
+      var card = document.createElement('div');
+      card.className = 'stat';
+      card.appendChild(span('stat-v', pair[1]));
+      card.appendChild(span('stat-k', pair[0]));
+      els.dashSummary.appendChild(card);
+    });
+
+    // 速度趋势
+    els.dashTrend.textContent = '';
+    var recent = statsDb.sessions.slice(-20);
+    if (recent.length >= 1) {
+      var wrap = document.createElement('div');
+      wrap.className = 'trend-wrap';
+      wrap.innerHTML = sparkline(recent.map(function (x) { return x.cpm || 0; }));
+      els.dashTrend.appendChild(wrap);
+      var legend = document.createElement('div');
+      legend.className = 'trend-legend';
+      legend.appendChild(span('', '最低 ' + Math.min.apply(null, recent.map(function (x) { return x.cpm; }))));
+      legend.appendChild(span('', '最高 ' + Math.max.apply(null, recent.map(function (x) { return x.cpm; }))));
+      legend.appendChild(span('', '最近 ' + recent.length + ' 轮'));
+      els.dashTrend.appendChild(legend);
+    } else {
+      els.dashTrend.appendChild(span('panel-empty', '跑完一轮就能看到趋势。'));
+    }
+    if (els.dashTrendSub) els.dashTrendSub.textContent = '最近 ' + Math.min(20, recent.length) + ' 轮 · 字符/分';
+
+    // 声母 / 韵母
+    els.dashErrors.textContent = '';
+    var cols = [
+      { title: '声母', rows: window.Stats.rank(statsDb.initials, 3).slice(0, 8) },
+      { title: '韵母', rows: window.Stats.rank(statsDb.finals, 3).slice(0, 8) }
+    ];
+    cols.forEach(function (col) {
+      var box = document.createElement('div');
+      box.className = 'bar-col';
+      box.appendChild(span('bar-col-title', col.title));
+      if (!col.rows.length) {
+        box.appendChild(span('panel-empty', '样本不足'));
+      } else {
+        col.rows.forEach(function (r) {
+          box.appendChild(barRow(r.key, r.rate, r.attempts, r.errors));
+        });
+      }
+      els.dashErrors.appendChild(box);
+    });
+
+    // 声调
+    els.dashTones.textContent = '';
+    var toneNames = { '1': '一声 ˉ', '2': '二声 ˊ', '3': '三声 ˇ', '4': '四声 ˋ', '5': '轻声' };
+    var toneRows = ['1', '2', '3', '4', '5'].map(function (t) {
+      var rec = statsDb.tones[t];
+      return { t: t, rec: rec };
+    }).filter(function (x) { return x.rec && x.rec.a >= 3; });
+
+    if (!toneRows.length) {
+      els.dashTones.appendChild(span('panel-empty', '样本不足（开声调模式多练几轮）'));
+    } else {
+      toneRows.forEach(function (x) {
+        els.dashTones.appendChild(barRow(toneNames[x.t], x.rec.e / x.rec.a, x.rec.a, x.rec.e));
+      });
+    }
+
+    // 掌握分布
+    els.dashMastery.textContent = '';
+    var segs = [
+      { key: 'fresh', label: '未学', n: mastery.fresh },
+      { key: 'learning', label: '学习中', n: mastery.learning },
+      { key: 'solid', label: '巩固中', n: mastery.solid },
+      { key: 'mastered', label: '已掌握', n: mastery.mastered }
+    ];
+    var total = Math.max(1, mastery.total);
+    var bar = document.createElement('div');
+    bar.className = 'mastery-bar';
+    segs.forEach(function (seg) {
+      var part = span('mastery-seg is-' + seg.key);
+      part.style.width = (seg.n / total * 100).toFixed(2) + '%';
+      part.title = seg.label + '：' + seg.n;
+      bar.appendChild(part);
+    });
+    els.dashMastery.appendChild(bar);
+
+    var legend = document.createElement('div');
+    legend.className = 'mastery-legend';
+    segs.forEach(function (seg) {
+      var item = document.createElement('span');
+      item.className = 'mastery-key is-' + seg.key;
+      item.appendChild(span('mastery-dot'));
+      item.appendChild(span('', seg.label + ' ' + seg.n));
+      legend.appendChild(item);
+    });
+    els.dashMastery.appendChild(legend);
+    if (els.dashMasterySub) {
+      els.dashMasterySub.textContent = '共 ' + mastery.total + ' 词句 · 间隔 ≥21 天记为已掌握';
+    }
+  }
+
+  function openDashboard() {
+    if (!els.stats) return;
+    state.statsOpen = true;
+    renderDashboard();
+    els.typing.hidden = true;
+    els.result.hidden = true;
+    els.stats.hidden = false;
+    els.focusHint.hidden = true;
+    if (document.activeElement === els.catcher) els.catcher.blur();
+    els.stats.scrollTop = 0;
+  }
+
+  function closeDashboard() {
+    state.statsOpen = false;
+    if (!els.stats) return;
+    els.stats.hidden = true;
+    if (state.finished) {
+      els.result.hidden = false;
+    } else {
+      els.typing.hidden = false;
+      focusCatcher();
+    }
+  }
+
   /* ---------------- 生命周期 ---------------- */
 
   function startSession() {
     state.sessionId++;
+    if (state.statsOpen) {
+      state.statsOpen = false;
+      if (els.stats) els.stats.hidden = true;
+    }
     state.queue = buildQueue();
     state.index = 0;
     state.correctKeys = 0;
@@ -571,6 +827,19 @@
     els.rsStreak.textContent = String(state.bestStreak);
     els.rsTime.textContent = formatTime(elapsed());
     if (window.Srs) persistSrs(true);
+    if (window.Stats) {
+      window.Stats.recordSession(statsDb, {
+        t: Date.now(),
+        mode: isSentenceMode() ? 'sentence' : 'word',
+        level: settings.level,
+        items: state.done.length,
+        cpm: cpm(),
+        acc: accuracy(),
+        chars: state.correctKeys,
+        ms: elapsed()
+      });
+      persistStats(true);
+    }
 
     if (els.rsDue && window.Srs) {
       var st = window.Srs.stats(srsDb, poolFor());
@@ -662,6 +931,19 @@
       focusCatcher();
     });
 
+    if (els.btnStats) els.btnStats.addEventListener('click', openDashboard);
+    if (els.btnDashFromResult) els.btnDashFromResult.addEventListener('click', openDashboard);
+    if (els.btnDashBack) els.btnDashBack.addEventListener('click', closeDashboard);
+    if (els.btnDashReset) {
+      els.btnDashReset.addEventListener('click', function () {
+        if (!window.confirm('清空统计数据与复习记录？此操作不可撤销。')) return;
+        if (window.Stats) { window.Stats.reset(); statsDb = window.Stats.empty(); }
+        if (window.Srs) { window.Srs.reset(); srsDb = {}; }
+        renderDashboard();
+        flash('统计与复习记录已清空', 'good');
+      });
+    }
+
     els.again.addEventListener('click', function () { startSession(); });
     els.newset.addEventListener('click', function () { startSession(); });
 
@@ -715,10 +997,19 @@
 
     catcher.addEventListener('focus', function () { els.focusHint.hidden = true; });
     catcher.addEventListener('blur', function () {
-      if (!state.finished) els.focusHint.hidden = false;
+      if (!state.finished && !state.statsOpen) els.focusHint.hidden = false;
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (!state.statsOpen) return;
+      if (e.key === 'Escape' || e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        closeDashboard();
+      }
     });
 
     document.addEventListener('mousedown', function (e) {
+      if (state.statsOpen) return;
       if (e.target.closest('button, select, option, a, .catcher')) return;
       focusCatcher();
     });
@@ -726,14 +1017,35 @@
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) {
         window.Speech.stop();
-        persistSrs(true);          // 切走/关页前落盘，避免丢复习记录
+        persistSrs(true);          // 切走/关页前落盘，避免丢记录
+        persistStats(true);
       }
     });
 
-    window.addEventListener('pagehide', function () { persistSrs(true); });
+    window.addEventListener('pagehide', function () {
+      persistSrs(true);
+      persistStats(true);
+    });
+  }
+
+  function bootError(err) {
+    var message = err && err.message ? err.message : String(err);
+    document.documentElement.setAttribute('data-boot-error', message);
+    document.documentElement.setAttribute('data-app-ready', '0');
+    els.flash.textContent = '启动失败：' + message;
+    els.flash.className = 'flash is-bad';
+    if (window.console && console.error) console.error('[echo-hanzi] boot failed', err);
   }
 
   function boot() {
+    try {
+      bootInner();
+    } catch (err) {
+      bootError(err);
+    }
+  }
+
+  function bootInner() {
     applySettingsToUI();
     bindSettings();
     bindInput();
@@ -745,6 +1057,7 @@
     if (!window.SENTENCE_LISTS) settings.mode = 'word';
     startSession();
     setTimeout(focusCatcher, 60);
+    document.documentElement.setAttribute('data-app-ready', '1');
   }
 
   if (document.readyState === 'loading') {

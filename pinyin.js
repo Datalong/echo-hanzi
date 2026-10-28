@@ -191,8 +191,23 @@
     return cells;
   }
 
+  /** 'zhang' -> { initial: 'zh', final: 'ang' }；零声母返回 initial: '' */
+  function splitInitialFinal(letters) {
+    var word = String(letters || '').toLowerCase();
+    if (!word) return { initial: '', final: '' };
+    var two = word.slice(0, 2);
+    if (two === 'zh' || two === 'ch' || two === 'sh') {
+      return { initial: two, final: word.slice(2) };
+    }
+    if ('bpmfdtnlgkhjqxrzcsyw'.indexOf(word.charAt(0)) !== -1) {
+      return { initial: word.charAt(0), final: word.slice(1) };
+    }
+    return { initial: '', final: word };
+  }
+
   var api = {
     parse: parse,
+    splitInitialFinal: splitInitialFinal,
     splitSyllables: splitSyllables,
     toPlain: toPlain,
     toNumbered: toNumbered,

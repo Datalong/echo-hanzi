@@ -117,6 +117,54 @@
     <div class="result-actions">
       <button class="primary-btn" id="btn-again" type="button">再练一轮</button>
       <button class="ghost-btn" id="btn-newset" type="button">换一批词</button>
+      <button class="ghost-btn" id="btn-dash-from-result" type="button">看数据</button>
+    </div>
+  </section>
+
+  <section class="screen dash" id="screen-stats" hidden>
+    <div class="dash-head">
+      <h2 class="dash-title">数据看板</h2>
+      <button class="ghost-btn" id="btn-dash-back" type="button">返回练习</button>
+    </div>
+
+    <p class="panel-empty dash-empty" id="dash-empty" hidden>还没有练习记录，先跑一轮吧。</p>
+
+    <div class="dash-summary" id="dash-summary"></div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h3 class="panel-title">速度趋势</h3>
+        <span class="panel-sub" id="dash-trend-sub"></span>
+      </div>
+      <div class="trend" id="dash-trend"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h3 class="panel-title">易错声母 / 韵母</h3>
+        <span class="panel-sub">按错误率排序 · 样本 ≥3</span>
+      </div>
+      <div class="bars" id="dash-errors"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h3 class="panel-title">声调错误率</h3>
+        <span class="panel-sub">需开声调模式积累</span>
+      </div>
+      <div class="tone-row" id="dash-tones"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h3 class="panel-title">掌握分布</h3>
+        <span class="panel-sub" id="dash-mastery-sub"></span>
+      </div>
+      <div class="mastery" id="dash-mastery"></div>
+    </section>
+
+    <div class="dash-foot">
+      <button class="ghost-btn danger" id="btn-dash-reset" type="button">清空统计数据</button>
     </div>
   </section>
 
@@ -126,6 +174,7 @@
     <span><kbd>?</kbd> 看答案</span>
     <span class="tip">ü 可以打 <kbd>v</kbd> 或 <kbd>u</kbd>；空格会自动跳过</span>
     <span class="tip" id="hint-punct" hidden>句中标点用 <kbd>,</kbd> <kbd>.</kbd> <kbd>!</kbd> <kbd>?</kbd> 键</span>
+    <button class="link-btn" id="btn-stats" type="button">数据看板</button>
   </footer>
 
   <div class="focus-hint" id="focus-hint" hidden>点一下页面开始输入</div>
@@ -139,6 +188,7 @@
 <script src="data.js"></script>
 <script src="audio.js"></script>
 <script src="srs.js"></script>
+<script src="stats.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
