@@ -10,7 +10,10 @@
   document.getElementById('f').src = '../index.html?t=' + Date.now();
 
 const log = [];
-const ok = (name, cond, extra) => log.push((cond ? 'PASS ' : 'FAIL ') + name + (extra ? ' :: ' + extra : ''));
+const ok = (name, cond, extra) => {
+  log.push((cond ? 'PASS ' : 'FAIL ') + name + (extra ? ' :: ' + extra : ''));
+  dumpLog();   // 实时刷新，卡住时也能看到进度
+};
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function typeChars(win, str) {
@@ -31,6 +34,7 @@ function waitLoad(frame) {
 }
 
 async function waitReady(frame, url) {
+  if (url && !frame.getAttribute('src')) frame.src = url;   // 首次导航由这里发起
   for (let attempt = 0; attempt < 4; attempt++) {
     await waitLoad(frame);
     let d = frame.contentDocument;
@@ -59,10 +63,13 @@ function curIndex(win) {
 }
 
 function dumpLog() {
-  const pre = document.createElement('pre');
-  pre.id = 'log';
-  pre.textContent = log.join('\n');
-  document.body.appendChild(pre);
+  let pre = document.getElementById('log');
+  if (!pre) {
+    pre = document.createElement('pre');
+    pre.id = 'log';
+    document.body.appendChild(pre);
+  }
+  pre.textContent = log.join('\n') + '\n[最后进度] ' + (log.length) + ' 项';
 }
 
 window.onerror = (msg, src, line, col) => {
@@ -323,11 +330,90 @@ window.onload = async () => {
   ok('看板：清空后回到空状态', !doc.getElementById('dash-empty').hidden,
      'empty visible=' + !doc.getElementById('dash-empty').hidden);
 
+  // ---------- 弱点专项（自适应出题） ----------
+  localStorage.setItem('echo-hanzi:stats:v1', JSON.stringify({
+    sessions: [], items: 0, syllables: 120,
+    initials: { 'zh': { a: 20, e: 16 }, 'n': { a: 20, e: 2 } },
+    finals: { 'ang': { a: 18, e: 9 } },
+    tones: { '3': { a: 12, e: 8 } }
+  }));
+
+  const f3 = document.createElement('iframe');
+  f3.width = 700; f3.height = 560;
+  document.body.appendChild(f3);
+  const d3 = await waitReady(f3, '../index.html?drill=' + Date.now());
+  const w3 = f3.contentWindow;
+
+  d3.getElementById('btn-stats').click();
+  await sleep(150);
+
+  const drillBtns = [...d3.querySelectorAll('#dash-drills .drill-btn')];
+  const drillLabels = drillBtns.map(b => b.querySelector('.drill-label').textContent);
+  ok('专项：看板给出建议', drillBtns.length >= 3, drillLabels.join(' / '));
+  ok('专项：按错误率排序且首项是混合', drillLabels[0] === '弱点混合', drillLabels[0]);
+  ok('专项：显示可用题量', /题可用/.test(drillBtns[1].querySelector('.drill-meta').textContent),
+     drillBtns[1].querySelector('.drill-meta').textContent);
+
+  const zhBtn = drillBtns.filter(b => b.querySelector('.drill-label').textContent === '声母 zh')[0];
+  zhBtn.click();
+  await sleep(250);
+
+  ok('专项：进入后显示专项 chip',
+     !d3.getElementById('run-drill').hidden && /专项：声母 zh/.test(d3.getElementById('run-drill').textContent),
+     d3.getElementById('run-drill').textContent);
+
+  let allZh = true;
+  const seen = [];
+  for (let i = 0; i < 3; i++) {
+    const py = [...d3.querySelectorAll('#pinyin .ch')].map(c => c.textContent).join('');
+    seen.push(py);
+    if (py.indexOf('zh') === -1) allZh = false;
+    for (const ch of py) {
+      const c = d3.getElementById('catcher');
+      c.value = ch;
+      c.dispatchEvent(new w3.Event('input', { bubbles: true }));
+    }
+    await sleep(320);
+  }
+  ok('专项：出的题都含声母 zh', allZh, seen.join(' , '));
+
+  // 退出专项
+  d3.getElementById('run-drill').click();
+  await sleep(250);
+  ok('专项：可退出回到普通练习',
+     !/专项：/.test(d3.getElementById('run-drill').textContent),
+     d3.getElementById('run-drill').textContent);
+
+  // 声调专项会自动开声调模式
+  d3.getElementById('btn-stats').click();
+  await sleep(150);
+  const toneBtn = [...d3.querySelectorAll('#dash-drills .drill-btn')]
+    .filter(b => b.querySelector('.drill-label').textContent === '第 3 声')[0];
+  ok('专项：声调项存在', !!toneBtn, toneBtn ? 'ok' : 'missing');
+  if (toneBtn) {
+    toneBtn.click();
+    await sleep(250);
+    ok('专项：声调专项自动开声调模式',
+       d3.getElementById('tg-tones').getAttribute('aria-pressed') === 'true');
+    ok('专项：题目出现声调位', d3.querySelectorAll('#pinyin .ch.is-tone').length > 0,
+       d3.querySelectorAll('#pinyin .ch.is-tone').length + ' digits');
+  }
+
   } catch (err) {
     log.push('FAIL 用例中断 :: ' + (err && err.message ? err.message : String(err)));
   }
+  window.__done = true;
+  if (!log.some(l => l.startsWith('FAIL 用例中断'))) log.push('DONE');
   dumpLog();
   document.title = log.filter(l => l.startsWith('FAIL')).length + ' failures';
 };
+
+// 看门狗：卡住也要留下输出，避免“静默成功”
+setTimeout(() => {
+  if (!window.__done) {
+    log.push('FAIL 超时未跑完（卡在第 ' + log.length + ' 项之后）');
+    dumpLog();
+  }
+}, 90000);
 </script>
 </body></html>

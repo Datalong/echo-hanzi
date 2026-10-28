@@ -70,6 +70,7 @@
       <span class="dot" aria-hidden="true">·</span>
       <span id="run-level">HSK 1</span>
       <span class="grow"></span>
+      <button class="chip chip-btn" id="run-drill" type="button" hidden></button>
       <span class="chip" id="run-due" hidden></span>
       <span id="run-mode"></span>
     </div>
@@ -130,6 +131,14 @@
     <p class="panel-empty dash-empty" id="dash-empty" hidden>还没有练习记录，先跑一轮吧。</p>
 
     <div class="dash-summary" id="dash-summary"></div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h3 class="panel-title">建议专项</h3>
+        <span class="panel-sub">按错误率挑出最该补的一项</span>
+      </div>
+      <div class="drills" id="dash-drills"></div>
+    </section>
 
     <section class="panel">
       <div class="panel-head">

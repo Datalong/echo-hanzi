@@ -207,6 +207,22 @@ body::before {
 
 .runline .grow { flex: 1; }
 
+.chip-btn {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.chip-btn.is-active {
+  color: var(--bg);
+  background: var(--accent-2);
+  border-style: solid;
+  border-color: var(--accent-2);
+}
+
+[data-theme="light"] .chip-btn.is-active { color: #fff; }
+
 .chip {
   font-size: 11px;
   letter-spacing: 0.04em;
@@ -723,6 +739,45 @@ body::before {
   font-variant-numeric: tabular-nums;
 }
 
+.drills {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.drill-btn {
+  appearance: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 13px;
+  border-radius: 11px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-soft);
+  color: var(--text);
+  transition: border-color 0.15s ease, transform 0.12s ease, background-color 0.15s ease;
+}
+
+.drill-btn:hover { border-color: var(--accent); }
+.drill-btn:active { transform: translateY(1px); }
+
+.drill-btn.is-mix {
+  border-color: var(--accent-2);
+  background: transparent;
+  border-style: dashed;
+}
+
+.drill-label { font-size: 14px; font-weight: 600; }
+
+.drill-meta {
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .bars {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -921,6 +976,7 @@ kbd {
   .unit { min-width: 34px; padding: 4px 5px 5px; }
   .stats, .result-grid, .dash-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
   .bars { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .drills { grid-template-columns: minmax(0, 1fr); }
   .bar-row { grid-template-columns: 42px minmax(0, 1fr) 38px; }
   .stat { padding: 8px 4px; }
   .stat-k { font-size: 10px; }

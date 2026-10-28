@@ -21,7 +21,7 @@ sleep 1
 echo "运行 tests/smoke.html ..."
 # 输出只取页面里的测试日志，避免误匹配脚本源码中的字符串
 OUT=$("$CHROME" --headless=new --disable-gpu --no-sandbox \
-  --virtual-time-budget=20000 --dump-dom \
+  --virtual-time-budget=120000 --dump-dom \
   "http://127.0.0.1:${PORT}/tests/smoke.html" 2>/dev/null)
 
 LOG=$(echo "$OUT" | sed -n '/<pre id="log">/,/<\/pre>/p' | sed 's/<[^>]*>//g')
@@ -33,6 +33,10 @@ if echo "$LOG" | grep -q '^FAIL'; then
 fi
 if ! echo "$LOG" | grep -q '^PASS'; then
   echo "❌ 没拿到测试输出"
+  exit 1
+fi
+if ! echo "$LOG" | grep -q '^DONE'; then
+  echo "❌ 测试没有跑完（缺少 DONE 标记）"
   exit 1
 fi
 echo "✅ 全部通过"

@@ -37,6 +37,8 @@
     runLevel: $('run-level'),
     runMode: $('run-mode'),
     runDue: $('run-due'),
+    runDrill: $('run-drill'),
+    dashDrills: $('dash-drills'),
     cardBadge: $('card-badge'),
     rsDue: $('rs-due'),
     stats: $('screen-stats'),
@@ -101,7 +103,8 @@
     reviewKeys: {},
     sessionId: 0,
     syllables: [],      // 本题的音节（含是否出错），用于统计
-    statsOpen: false
+    statsOpen: false,
+    drill: null         // 当前专项：{ kind, key, label } 
   };
   var srsDb = window.Srs ? window.Srs.load() : {};
   var srsSaveTimer = null;
@@ -164,9 +167,120 @@
     return (table[settings.level] || table.hsk1).slice();
   }
 
+  /* ---------------- 弱点专项 ---------------- */
+
+  function syllableFacts(syl) {
+    var parts = window.Pinyin.splitInitialFinal(syl.letters);
+    return {
+      initial: parts.initial || '(零声母)',
+      final: parts.final || syl.letters,
+      tone: String(syl.tone || 5)
+    };
+  }
+
+  function drillHit(one, item) {
+    var syls = window.Pinyin.parse(item.pinyin);
+    for (var i = 0; i < syls.length; i++) {
+      var facts = syllableFacts(syls[i]);
+      if (one.kind === 'tone' && facts.tone === one.key) return true;
+      if (one.kind === 'initial' && facts.initial === one.key) return true;
+      if (one.kind === 'final' && facts.final === one.key) return true;
+    }
+    return false;
+  }
+
+  function drillMatch(drill, item) {
+    if (!drill) return true;
+    if (drill.kind === 'mix') {
+      return drill.keys.some(function (one) { return drillHit(one, item); });
+    }
+    return drillHit(drill, item);
+  }
+
+  function drillPool() {
+    var pool = poolFor();
+    if (!state.drill) return pool;
+    var matched = pool.filter(function (item) { return drillMatch(state.drill, item); });
+    return matched.length ? matched : pool;
+  }
+
+  function labelOf(kind, key) {
+    if (kind === 'initial') return '声母 ' + key;
+    if (kind === 'final') return '韵母 ' + key;
+    if (kind === 'tone') return '第 ' + key + ' 声';
+    return '弱点混合';
+  }
+
+  /** 从统计里挑出最该补的几项 */
+  function buildSuggestions(limit) {
+    if (!window.Stats) return [];
+    var cands = [];
+
+    window.Stats.rank(statsDb.initials, 5).forEach(function (r) {
+      if (r.rate >= 0.12 && r.errors >= 3) {
+        cands.push({ kind: 'initial', key: r.key, label: labelOf('initial', r.key), rate: r.rate, errors: r.errors, attempts: r.attempts });
+      }
+    });
+    window.Stats.rank(statsDb.finals, 5).forEach(function (r) {
+      if (r.rate >= 0.12 && r.errors >= 3) {
+        cands.push({ kind: 'final', key: r.key, label: labelOf('final', r.key), rate: r.rate, errors: r.errors, attempts: r.attempts });
+      }
+    });
+    ['3', '2', '4', '1', '5'].forEach(function (t) {
+      var rec = statsDb.tones[t];
+      if (rec && rec.a >= 5 && rec.e / rec.a >= 0.12) {
+        cands.push({ kind: 'tone', key: t, label: labelOf('tone', t), rate: rec.e / rec.a, errors: rec.e, attempts: rec.a });
+      }
+    });
+
+    cands.sort(function (a, b) { return b.rate - a.rate; });
+    var top = cands.slice(0, limit || 3);
+
+    // 两项以上时给一个「混合」入口
+    if (top.length >= 2) {
+      top.unshift({
+        kind: 'mix',
+        keys: top.slice(0, 3).map(function (c) { return { kind: c.kind, key: c.key }; }),
+        label: '弱点混合',
+        rate: top[0].rate,
+        mixed: true
+      });
+    }
+    return top;
+  }
+
+  function drillSize(drill) {
+    if (!drill) return 0;
+    return poolFor().filter(function (item) { return drillMatch(drill, item); }).length;
+  }
+
+  function startDrill(drill) {
+    if (!drill) return;
+    var size = drillSize(drill);
+    if (!size) {
+      flash('没有匹配的题目，换一个专项试试', 'bad');
+      return;
+    }
+    state.drill = drill;
+    if (drill.kind === 'tone' && !settings.tones) {
+      settings.tones = true;                 // 练声调必须开声调模式
+      setPressed(els.tones, true);
+      saveSettings();
+      flash('已自动打开声调模式', 'good');
+    }
+    if (els.stats) els.stats.hidden = true;
+    state.statsOpen = false;
+    startSession();
+  }
+
+  function exitDrill() {
+    state.drill = null;
+    startSession();
+  }
+
   /** 到期题目优先，其余随机补齐；同时记录“本轮哪些是复习” */
   function buildQueue() {
-    var pool = poolFor();
+    var pool = drillPool();
     var wanted = settings.count > 0 ? settings.count : pool.length;
     var due = window.Srs ? window.Srs.dueItems(srsDb, pool) : [];
 
@@ -415,6 +529,23 @@
     if (settings.echo) modes.push('听音模式');
     if (isSentenceMode()) modes.push('句型');
     els.runMode.textContent = modes.join(' · ');
+
+    if (els.runDrill) {
+      var tips = state.drill ? null : buildSuggestions(1);
+      if (state.drill) {
+        els.runDrill.textContent = '专项：' + state.drill.label + ' ×';
+        els.runDrill.title = '点击退出专项，回到普通练习';
+        els.runDrill.classList.add('is-active');
+        els.runDrill.hidden = false;
+      } else if (tips.length) {
+        els.runDrill.textContent = '弱项专项';
+        els.runDrill.title = '按当前最弱的一项出题：' + tips[0].label;
+        els.runDrill.classList.remove('is-active');
+        els.runDrill.hidden = false;
+      } else {
+        els.runDrill.hidden = true;
+      }
+    }
 
     if (els.runDue) {
       if (state.dueCount > 0) {
@@ -674,6 +805,31 @@
       els.dashSummary.appendChild(card);
     });
 
+    // 建议专项
+    if (els.dashDrills) {
+      els.dashDrills.textContent = '';
+      var tips = buildSuggestions(4);
+      if (!tips.length) {
+        els.dashDrills.appendChild(span('panel-empty', '样本还不够，先多练几轮，这里会自动给出建议。'));
+      } else {
+        tips.forEach(function (tip) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'drill-btn';
+
+          var name = span('drill-label', tip.label);
+          var meta = span('drill-meta',
+            '错误率 ' + Math.round(tip.rate * 100) + '% · ' + drillSize(tip) + ' 题可用');
+          btn.appendChild(name);
+          btn.appendChild(meta);
+          if (tip.mixed) btn.classList.add('is-mix');
+
+          btn.addEventListener('click', function () { startDrill(tip); });
+          els.dashDrills.appendChild(btn);
+        });
+      }
+    }
+
     // 速度趋势
     els.dashTrend.textContent = '';
     var recent = statsDb.sessions.slice(-20);
@@ -930,6 +1086,17 @@
       saveSettings();
       focusCatcher();
     });
+
+    if (els.runDrill) {
+      els.runDrill.addEventListener('click', function () {
+        if (state.drill) {
+          exitDrill();
+          return;
+        }
+        var tips = buildSuggestions(1);
+        if (tips.length) startDrill(tips[0]);
+      });
+    }
 
     if (els.btnStats) els.btnStats.addEventListener('click', openDashboard);
     if (els.btnDashFromResult) els.btnDashFromResult.addEventListener('click', openDashboard);
