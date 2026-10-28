@@ -29,10 +29,11 @@
         <select id="sel-mode">
           <option value="word">词</option>
           <option value="sentence">句</option>
+          <option value="story">故事</option>
         </select>
       </label>
 
-      <label class="sfield">
+      <label class="sfield" id="field-level">
         <span class="sfield-label">词库</span>
         <select id="sel-level">
           <option value="hsk1">HSK 1</option>
@@ -41,7 +42,17 @@
         </select>
       </label>
 
-      <label class="sfield">
+      <label class="sfield" id="field-story" hidden>
+        <span class="sfield-label">选篇</span>
+        <select id="sel-story">
+          <option value="beijing-trip">第一次去北京</option>
+          <option value="my-cat">我的小猫咪咪</option>
+          <option value="coffee-shop">在咖啡馆见面</option>
+          <option value="weekend-sports">周末的运动时光</option>
+        </select>
+      </label>
+
+      <label class="sfield" id="field-count">
         <span class="sfield-label">数量</span>
         <select id="sel-count">
           <option value="10">10</option>
@@ -87,6 +98,16 @@
     <section class="card" id="card">
       <span class="card-badge" id="card-badge" hidden></span>
       <button class="ghost-btn iconly card-stroke-btn" id="btn-show-stroke" type="button" title="查看笔顺 (S)">✍️</button>
+      
+      <!-- 故事沉浸式段落全景视图 -->
+      <div class="story-view" id="story-view" hidden>
+        <div class="story-meta">
+          <h2 class="story-title" id="story-title">第一次去北京</h2>
+          <span class="story-intro" id="story-intro">First Trip to Beijing</span>
+        </div>
+        <div class="story-paragraphs" id="story-paragraphs"></div>
+      </div>
+
       <div class="hanzi" id="hanzi" lang="zh-Hans">你好</div>
       <div class="pinyin" id="pinyin" aria-live="off"></div>
       <div class="sentence" id="sentence" lang="zh-Hans" hidden></div>
@@ -250,6 +271,7 @@
 <script src="pinyin.js"></script>
 <script src="data.js"></script>
 <script src="audio.js"></script>
+<script src="stories.js"></script>
 <script src="ime.js"></script>
 <script src="strokes.js"></script>
 <script src="srs.js"></script>

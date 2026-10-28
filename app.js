@@ -15,6 +15,7 @@
   var DEFAULTS = {
     mode: 'word',
     level: 'hsk1',
+    storyId: 'beijing-trip',
     count: 20,
     tones: false,
     ime: false,
@@ -28,6 +29,14 @@
     mode: $('sel-mode'),
     level: $('sel-level'),
     count: $('sel-count'),
+    story: $('sel-story'),
+    fieldLevel: $('field-level'),
+    fieldStory: $('field-story'),
+    fieldCount: $('field-count'),
+    storyView: $('story-view'),
+    storyTitle: $('story-title'),
+    storyIntro: $('story-intro'),
+    storyParagraphs: $('story-paragraphs'),
     tones: $('tg-tones'),
     ime: $('tg-ime'),
     imePopup: $('ime-popup'),
@@ -154,13 +163,19 @@
   }
 
   function isSentenceMode() {
-    return settings.mode === 'sentence';
+    return settings.mode === 'sentence' || settings.mode === 'story';
+  }
+
+  function isStoryMode() {
+    return settings.mode === 'story';
   }
 
   function applySettingsToUI() {
     els.mode.value = settings.mode;
     els.level.value = settings.level;
+    if (els.story) els.story.value = settings.storyId || 'beijing-trip';
     els.count.value = String(settings.count);
+    syncModeDropdowns();
     setPressed(els.tones, settings.tones);
     setPressed(els.ime, settings.ime);
     setPressed(els.echo, settings.echo);
@@ -412,7 +427,34 @@
   }
 
   /** 到期题目优先，其余随机补齐；同时记录“本轮哪些是复习” */
+
+  function syncModeDropdowns() {
+    var story = isStoryMode();
+    if (els.fieldStory) els.fieldStory.hidden = !story;
+    if (els.fieldLevel) els.fieldLevel.hidden = story;
+    if (els.fieldCount) els.fieldCount.hidden = story;
+  }
+
   function buildQueue() {
+    if (isStoryMode() && window.Stories) {
+      var st = window.Stories.getById(settings.storyId);
+      var storyQueue = [];
+      st.sentences.forEach(function (s, idx) {
+        storyQueue.push({
+          hanzi: s.hanzi,
+          pinyin: s.pinyin,
+          english: s.english,
+          level: st.level,
+          kind: 'sentence',
+          isStory: true,
+          storyTitle: st.title,
+          storyIntro: st.englishTitle + ' · ' + st.intro,
+          lineIndex: idx,
+          totalLines: st.sentences.length
+        });
+      });
+      return storyQueue;
+    }
     var pool = drillPool();
     var wanted = settings.count > 0 ? settings.count : pool.length;
     var due = window.Srs ? window.Srs.dueItems(srsDb, pool) : [];
@@ -600,6 +642,18 @@
 
     els.card.classList.remove('done', 'masked');
     els.card.classList.toggle('is-sentence', isSentenceMode());
+
+    if (isStoryMode()) {
+      els.card.classList.add('is-story');
+      els.storyView.hidden = false;
+      els.storyTitle.textContent = item.storyTitle || '';
+      els.storyIntro.textContent = item.storyIntro || '';
+      renderStoryParagraphs();
+    } else {
+      els.card.classList.remove('is-story');
+      if (els.storyView) els.storyView.hidden = true;
+    }
+
     els.hanzi.hidden = isSentenceMode();
     els.pinyin.hidden = isSentenceMode();
     els.sentence.hidden = !isSentenceMode();
@@ -649,7 +703,27 @@
   }
 
   function runUnit() {
+    if (isStoryMode()) return '段';
     return isSentenceMode() ? '句' : '词';
+  }
+
+
+  function renderStoryParagraphs() {
+    if (!els.storyParagraphs || !isStoryMode()) return;
+    els.storyParagraphs.textContent = '';
+    state.queue.forEach(function (it, idx) {
+      var line = document.createElement('div');
+      line.className = 'story-line';
+      if (idx < state.index) line.className += ' is-done';
+      if (idx === state.index) line.className += ' is-active';
+
+      var hz = span('story-line-hz', it.hanzi);
+      var en = span('story-line-en', it.english);
+      line.appendChild(hz);
+      line.appendChild(en);
+
+      els.storyParagraphs.appendChild(line);
+    });
   }
 
   function updateRunLine() {
@@ -661,7 +735,8 @@
     if (settings.ime) modes.push('输入法');
     if (settings.tones) modes.push('含声调');
     if (settings.echo) modes.push('听音模式');
-    if (isSentenceMode()) modes.push('句型');
+    if (isStoryMode()) modes.push('故事短文');
+    else if (isSentenceMode()) modes.push('句型');
     els.runMode.textContent = modes.join(' · ');
 
     if (els.runDrill) {
@@ -1333,9 +1408,17 @@
   function bindSettings() {
     els.mode.addEventListener('change', function () {
       settings.mode = els.mode.value;
+      syncModeDropdowns();
       saveSettings();
       startSession();
     });
+    if (els.story) {
+      els.story.addEventListener('change', function () {
+        settings.storyId = els.story.value;
+        saveSettings();
+        startSession();
+      });
+    }
     els.level.addEventListener('change', function () {
       settings.level = els.level.value;
       saveSettings();

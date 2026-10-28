@@ -962,9 +962,10 @@ kbd {
     width: 100%;
   }
   .controls .sfield { justify-content: space-between; }
-  .controls > :nth-child(1) { grid-area: 1 / 1 / 2 / 5; }
-  .controls > :nth-child(2) { grid-area: 1 / 5 / 2 / 9; }
-  .controls > :nth-child(3) { grid-area: 1 / 9 / 2 / 13; }
+  .controls > :nth-child(1) { grid-column: span 4; }
+  .controls > :nth-child(2) { grid-column: span 4; }
+  .controls > :nth-child(3) { grid-column: span 4; }
+  .controls > :nth-child(4) { grid-column: span 4; }
   .controls > :nth-child(4) { grid-column: span 2; }
   .controls > :nth-child(5) { grid-column: span 3; }
   .controls > :nth-child(6) { grid-column: span 2; }
@@ -1219,4 +1220,88 @@ kbd {
 
 .ime-page-info {
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- 故事短文沉浸模式 ---------------- */
+
+.story-view {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+.story-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 14px;
+  text-align: center;
+}
+
+.story-title {
+  margin: 0;
+  font-family: "Songti SC", "Noto Serif SC", serif;
+  font-size: clamp(24px, 4.5vw, 32px);
+  color: var(--text);
+  letter-spacing: 0.05em;
+}
+
+.story-intro {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 52ch;
+  line-height: 1.4;
+}
+
+.story-paragraphs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.story-line {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: transparent;
+  transition: background-color 0.22s ease, opacity 0.22s ease, transform 0.22s ease;
+  opacity: 0.45;
+}
+
+.story-line.is-active {
+  background: var(--bg-soft);
+  opacity: 1;
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  transform: scale(1.01);
+}
+
+.story-line.is-done {
+  opacity: 0.85;
+}
+
+.story-line-hz {
+  font-family: "Songti SC", "Noto Serif SC", serif;
+  font-size: clamp(17px, 3.2vw, 22px);
+  line-height: 1.6;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.story-line.is-done .story-line-hz {
+  color: var(--muted);
+}
+
+.story-line-en {
+  font-size: 12px;
+  color: var(--faint);
+  margin-top: 4px;
+}
+
+.card.is-story {
+  padding: 30px 24px 28px;
+  min-height: 280px;
 }

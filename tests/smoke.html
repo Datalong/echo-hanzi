@@ -43,7 +43,7 @@ async function waitReady(frame, url) {
       const w = frame.contentWindow;
       if (d.documentElement.getAttribute('data-app-ready') === '1' &&
           d.querySelector('#pinyin .ch') &&
-          w && w.Srs && w.Stats && w.Strokes && w.Ime) {
+          w && w.Srs && w.Stats && w.Strokes && w.Ime && w.Stories) {
         return d;
       }
       await sleep(20);
@@ -469,6 +469,38 @@ window.onload = async () => {
   doc.getElementById('tg-ime').click();
   await sleep(150);
   ok('输入法：切回直打模式', doc.getElementById('tg-ime').getAttribute('aria-pressed') === 'false');
+
+  // ---------- 场景化故事短文模式 (Story Mode) ----------
+  ok('故事：Stories 模块可用', typeof win.Stories === 'object' && Array.isArray(win.Stories.STORIES));
+  ok('故事：内置故事篇目充足', win.Stories.STORIES.length >= 4, win.Stories.STORIES.length + ' 篇故事');
+
+  // 切换模式到故事
+  modeSel.value = 'story';
+  modeSel.dispatchEvent(new win.Event('change', { bubbles: true }));
+  await sleep(250);
+
+  ok('故事：选篇下拉框显示', !doc.getElementById('field-story').hidden);
+  ok('故事：词库与数量下拉框隐藏', doc.getElementById('field-level').hidden && doc.getElementById('field-count').hidden);
+  ok('故事：故事全景视图展开', !doc.getElementById('story-view').hidden);
+  ok('故事：故事标题渲染', doc.getElementById('story-title').textContent.trim().length > 0, doc.getElementById('story-title').textContent);
+  ok('故事：段落列表渲染', doc.querySelectorAll('#story-paragraphs .story-line').length > 0,
+     doc.querySelectorAll('#story-paragraphs .story-line').length + ' 行段落');
+
+  const lines = [...doc.querySelectorAll('#story-paragraphs .story-line')];
+  ok('故事：首行段落激活高亮', lines[0].classList.contains('is-active'));
+
+  // 切换故事篇目
+  const storySel = doc.getElementById('sel-story');
+  storySel.value = 'my-cat';
+  storySel.dispatchEvent(new win.Event('change', { bubbles: true }));
+  await sleep(250);
+  ok('故事：换篇刷新标题', doc.getElementById('story-title').textContent === '我的小猫咪咪', doc.getElementById('story-title').textContent);
+
+  // 切回常规词模式
+  modeSel.value = 'word';
+  modeSel.dispatchEvent(new win.Event('change', { bubbles: true }));
+  await sleep(200);
+  ok('故事：切回词模式隐藏故事视图', doc.getElementById('story-view').hidden && !doc.getElementById('field-level').hidden);
 
   // ---------- PWA 离线能力 ----------
   const mRes = await fetch('../manifest.json');
