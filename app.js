@@ -54,6 +54,16 @@
     btnDashBack: $('btn-dash-back'),
     btnDashReset: $('btn-dash-reset'),
     btnDashFromResult: $('btn-dash-from-result'),
+    strokeModal: $('stroke-modal'),
+    strokeChar: $('stroke-char'),
+    strokeInfo: $('stroke-info'),
+    strokeCanvas: $('stroke-canvas'),
+    btnStrokeClose: $('btn-stroke-close'),
+    btnStrokeReplay: $('btn-stroke-replay'),
+    btnStrokePrev: $('btn-stroke-prev'),
+    btnStrokeNext: $('btn-stroke-next'),
+    btnStrokePlay: $('btn-stroke-play'),
+    btnShowStroke: $('btn-show-stroke'),
     card: $('card'),
     hanzi: $('hanzi'),
     pinyin: $('pinyin'),
@@ -104,7 +114,11 @@
     sessionId: 0,
     syllables: [],      // 本题的音节（含是否出错），用于统计
     statsOpen: false,
-    drill: null         // 当前专项：{ kind, key, label } 
+    drill: null,        // 当前专项：{ kind, key, label }
+    strokeOpen: false,
+    strokeIndex: 0,
+    strokePaths: [],
+    strokeTimer: null
   };
   var srsDb = window.Srs ? window.Srs.load() : {};
   var srsSaveTimer = null;
@@ -165,6 +179,115 @@
   function poolFor() {
     var table = isSentenceMode() ? window.SENTENCE_LISTS : window.WORD_LISTS;
     return (table[settings.level] || table.hsk1).slice();
+  }
+
+
+  /* ---------------- 笔顺演示 ---------------- */
+
+  function getCurrentChar() {
+    var item = currentItem();
+    if (!item) return '文';
+    if (!isSentenceMode()) {
+      return item.hanzi.charAt(0) || '文';
+    }
+    // 句模式：根据当前正在打的字符定位
+    for (var i = 0; i < state.chars.length; i++) {
+      var c = state.chars[i];
+      if (!c.punct && state.pos >= c.start && state.pos < c.end) {
+        return c.text;
+      }
+    }
+    // 如果都打完了或当前是标点，取第一个非标点汉字
+    for (var j = 0; j < state.chars.length; j++) {
+      if (!state.chars[j].punct) return state.chars[j].text;
+    }
+    return item.hanzi.charAt(0) || '文';
+  }
+
+  function openStrokeModal(charToDemo) {
+    if (!window.Strokes || !els.strokeModal) return;
+    var ch = charToDemo || getCurrentChar();
+    state.strokeOpen = true;
+    state.strokeIndex = 0;
+    if (state.strokeTimer) clearInterval(state.strokeTimer);
+
+    els.strokeChar.textContent = ch;
+    var paths = window.Strokes.getStrokes(ch);
+    state.strokePaths = paths;
+
+    els.strokeInfo.textContent = '共 ' + paths.length + ' 画';
+    renderStrokeCanvas();
+
+    els.strokeModal.hidden = false;
+    if (document.activeElement === els.catcher) els.catcher.blur();
+
+    // 默认打开立即自动演示一遍
+    playStrokeAnimation();
+  }
+
+  function closeStrokeModal() {
+    state.strokeOpen = false;
+    if (state.strokeTimer) { clearInterval(state.strokeTimer); state.strokeTimer = null; }
+    if (els.strokeModal) els.strokeModal.hidden = true;
+    if (!state.statsOpen && !state.finished) {
+      focusCatcher();
+    }
+  }
+
+  function renderStrokeCanvas() {
+    if (!els.strokeCanvas) return;
+    els.strokeCanvas.textContent = '';
+    var paths = state.strokePaths;
+    for (var i = 0; i < paths.length; i++) {
+      var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p.setAttribute('d', paths[i]);
+      var cls = 'stroke-path';
+      if (i < state.strokeIndex) cls += ' is-written';
+      if (i === state.strokeIndex) cls += ' is-active';
+      p.setAttribute('class', cls);
+      els.strokeCanvas.appendChild(p);
+    }
+    var current = Math.min(paths.length, state.strokeIndex + 1);
+    els.strokeInfo.textContent = current + ' / ' + paths.length + ' 画';
+  }
+
+  function playStrokeAnimation() {
+    if (state.strokeTimer) clearInterval(state.strokeTimer);
+    state.strokeIndex = 0;
+    renderStrokeCanvas();
+    if (settings.sound) window.Sound.click();
+
+    state.strokeTimer = setInterval(function () {
+      if (!state.strokeOpen) {
+        clearInterval(state.strokeTimer);
+        return;
+      }
+      state.strokeIndex++;
+      if (state.strokeIndex >= state.strokePaths.length) {
+        clearInterval(state.strokeTimer);
+        state.strokeTimer = null;
+        // 演示完成稍微强调全部
+        setTimeout(function () {
+          if (!state.strokeOpen) return;
+          state.strokeIndex = state.strokePaths.length;
+          renderStrokeCanvas();
+          if (settings.sound) window.Sound.success();
+        }, 150);
+        return;
+      }
+      renderStrokeCanvas();
+      if (settings.sound) window.Sound.click();
+    }, 450);
+  }
+
+  function strokeStep(delta) {
+    if (state.strokeTimer) { clearInterval(state.strokeTimer); state.strokeTimer = null; }
+    var next = state.strokeIndex + delta;
+    if (next < 0) next = 0;
+    if (next >= state.strokePaths.length) next = state.strokePaths.length - 1;
+    state.strokeIndex = next;
+    renderStrokeCanvas();
+    if (settings.sound) window.Sound.click();
   }
 
   /* ---------------- 弱点专项 ---------------- */
@@ -639,7 +762,7 @@
   }
 
   function handleChar(raw) {
-    if (state.finished || state.lock || state.statsOpen) return;
+    if (state.finished || state.lock || state.statsOpen || state.strokeOpen) return;
 
     var ch = String(raw).toLowerCase();
     if (ch === ' ' || ch === "'" || ch === '\u2019') return;  // 空格/分隔符跳过
@@ -1098,6 +1221,33 @@
       });
     }
 
+
+    if (els.btnStrokeClose) els.btnStrokeClose.addEventListener('click', closeStrokeModal);
+    if (els.btnStrokeReplay) els.btnStrokeReplay.addEventListener('click', playStrokeAnimation);
+    if (els.btnStrokePlay) els.btnStrokePlay.addEventListener('click', playStrokeAnimation);
+    if (els.btnStrokePrev) els.btnStrokePrev.addEventListener('click', function () { strokeStep(-1); });
+    if (els.btnStrokeNext) els.btnStrokeNext.addEventListener('click', function () { strokeStep(1); });
+    if (els.strokeModal) {
+      els.strokeModal.addEventListener('click', function (e) {
+        if (e.target === els.strokeModal) closeStrokeModal();
+      });
+    }
+
+    // 点击大汉字打开笔顺浮层
+    if (els.hanzi) {
+      els.hanzi.addEventListener('click', function () {
+        openStrokeModal(els.hanzi.textContent.trim());
+      });
+    }
+    // 句模式下点击单个字打开笔顺
+    if (els.sentence) {
+      els.sentence.addEventListener('click', function (e) {
+        var hzEl = e.target.closest('.u-hz');
+        if (hzEl) openStrokeModal(hzEl.textContent.trim());
+      });
+    }
+
+    if (els.btnShowStroke) els.btnShowStroke.addEventListener('click', function () { openStrokeModal(); });
     if (els.btnStats) els.btnStats.addEventListener('click', openDashboard);
     if (els.btnDashFromResult) els.btnDashFromResult.addEventListener('click', openDashboard);
     if (els.btnDashBack) els.btnDashBack.addEventListener('click', closeDashboard);
@@ -1168,10 +1318,23 @@
     });
 
     document.addEventListener('keydown', function (e) {
-      if (!state.statsOpen) return;
-      if (e.key === 'Escape' || e.key === 'd' || e.key === 'D') {
+      if (state.strokeOpen) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeStrokeModal();
+        }
+        return;
+      }
+      if (state.statsOpen) {
+        if (e.key === 'Escape' || e.key === 'd' || e.key === 'D') {
+          e.preventDefault();
+          closeDashboard();
+        }
+        return;
+      }
+      if ((e.key === 's' || e.key === 'S') && (e.altKey || e.metaKey || document.activeElement !== els.catcher)) {
         e.preventDefault();
-        closeDashboard();
+        openStrokeModal();
       }
     });
 

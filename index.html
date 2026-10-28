@@ -83,6 +83,7 @@
 
     <section class="card" id="card">
       <span class="card-badge" id="card-badge" hidden></span>
+      <button class="ghost-btn iconly card-stroke-btn" id="btn-show-stroke" type="button" title="查看笔顺 (S)">✍️</button>
       <div class="hanzi" id="hanzi" lang="zh-Hans">你好</div>
       <div class="pinyin" id="pinyin" aria-live="off"></div>
       <div class="sentence" id="sentence" lang="zh-Hans" hidden></div>
@@ -187,12 +188,46 @@
     <span><kbd>Tab</kbd> 换词</span>
     <span><kbd>Esc</kbd> 重来</span>
     <span><kbd>?</kbd> 看答案</span>
+    <span><kbd>S</kbd> 笔顺</span>
     <span class="tip">ü 可以打 <kbd>v</kbd> 或 <kbd>u</kbd>；空格会自动跳过</span>
     <span class="tip" id="hint-punct" hidden>句中标点用 <kbd>,</kbd> <kbd>.</kbd> <kbd>!</kbd> <kbd>?</kbd> 键</span>
     <button class="link-btn" id="btn-stats" type="button">数据看板</button>
   </footer>
 
   <div class="focus-hint" id="focus-hint" hidden>点一下页面开始输入</div>
+</div>
+
+<!-- 汉字笔顺动画演示浮层 -->
+<div class="modal-backdrop" id="stroke-modal" hidden>
+  <div class="stroke-dialog">
+    <div class="stroke-header">
+      <div class="stroke-title-wrap">
+        <h3 class="stroke-char" id="stroke-char">文</h3>
+        <span class="stroke-info" id="stroke-info">笔画 4</span>
+      </div>
+      <button class="ghost-btn iconly stroke-close" id="btn-stroke-close" type="button" title="关闭 (Esc)">✕</button>
+    </div>
+
+    <div class="stroke-grid-box">
+      <!-- 米字格 -->
+      <svg class="mige-bg" viewBox="0 0 1024 1024">
+        <line x1="0" y1="0" x2="1024" y2="1024" stroke="currentColor" stroke-dasharray="8 8" opacity="0.18"/>
+        <line x1="1024" y1="0" x2="0" y2="1024" stroke="currentColor" stroke-dasharray="8 8" opacity="0.18"/>
+        <line x1="512" y1="0" x2="512" y2="1024" stroke="currentColor" stroke-dasharray="8 8" opacity="0.25"/>
+        <line x1="0" y1="512" x2="1024" y2="512" stroke="currentColor" stroke-dasharray="8 8" opacity="0.25"/>
+        <rect x="2" y="2" width="1020" height="1020" fill="none" stroke="currentColor" opacity="0.3"/>
+      </svg>
+      <!-- 动态笔画 SVG -->
+      <svg class="stroke-canvas" id="stroke-canvas" viewBox="0 0 1024 1024"></svg>
+    </div>
+
+    <div class="stroke-controls">
+      <button class="ghost-btn" id="btn-stroke-replay" type="button">重播</button>
+      <button class="ghost-btn" id="btn-stroke-prev" type="button">上一步</button>
+      <button class="ghost-btn" id="btn-stroke-next" type="button">下一步</button>
+      <button class="primary-btn" id="btn-stroke-play" type="button">自动演示</button>
+    </div>
+  </div>
 </div>
 
 <input id="catcher" class="catcher" type="text" inputmode="latin" lang="en"
@@ -202,6 +237,7 @@
 <script src="pinyin.js"></script>
 <script src="data.js"></script>
 <script src="audio.js"></script>
+<script src="strokes.js"></script>
 <script src="srs.js"></script>
 <script src="stats.js"></script>
 <script src="app.js"></script>
