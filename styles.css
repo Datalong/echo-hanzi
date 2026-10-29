@@ -2464,3 +2464,53 @@ kbd {
   font-weight: 700;
   color: var(--accent);
 }
+
+/* ---------------- 👑 Pro 授权 ---------------- */
+
+.pro-status {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.pro-status.is-active { color: var(--accent); }
+
+.pro-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.pro-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--bg-soft);
+}
+
+.pro-row > span:first-child { flex: 1; color: var(--text); }
+.pro-free { color: var(--muted); width: 84px; text-align: right; }
+.pro-pro { color: var(--accent); width: 84px; text-align: right; font-weight: 600; }
+
+.pro-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+
+.pro-actions { margin-bottom: 10px; }
+
+.pro-buy { text-decoration: none; display: inline-block; }
+
+.pro-activate {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pro-activate input { flex: 1; font-size: 12px; }

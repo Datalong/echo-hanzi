@@ -862,6 +862,40 @@ window.onload = async () => {
   }
   ok('小测：出结果', doc.querySelector('#read-quiz .quiz-result') !== null, doc.querySelector('#read-quiz .quiz-result')?.textContent || '');
 
+  // ---------- Pro 授权 (License) ----------
+  ok('Pro：License 模块可用', typeof win.License === 'object' && typeof win.License.activate === 'function');
+  win.License.deactivate();
+  ok('Pro：默认免费版', win.License.isPro() === false);
+  ok('Pro：免费配额定义', win.License.QUOTA.tutorDaily === 5 && win.License.QUOTA.pronDaily === 10);
+
+  // 词库门槛：HSK2 需 Pro
+  const lvl = doc.getElementById('sel-level');
+  lvl.value = 'hsk2';
+  lvl.dispatchEvent(new win.Event('change', { bubbles: true }));
+  await sleep(100);
+  ok('Pro：HSK2 被拦截', lvl.value === 'hsk1' && !doc.getElementById('pro-modal').hidden);
+  ok('Pro：对比表渲染', doc.querySelectorAll('#pro-compare .pro-row').length === 5);
+
+  // 无效 key 拒绝
+  doc.getElementById('pro-key-input').value = 'EH1.eyJ2IjoxfQ.invalidsig';
+  doc.getElementById('btn-pro-activate').click();
+  await sleep(300);
+  ok('Pro：无效 key 拒绝', win.License.isPro() === false);
+
+  // 助教配额：当日 5 条后拦截
+  win.localStorage.setItem('echo-hanzi:quota:tutorDaily', JSON.stringify({ day: new Date().toISOString().slice(0,10), n: 5 }));
+  win.Tutor.saveSettings({ apiKey: 'sk-test' });
+  win.Tutor.clearHistory();
+  doc.getElementById('tab-tutor').click();
+  await sleep(150);
+  doc.getElementById('tutor-input').value = 'hi';
+  doc.getElementById('btn-tutor-send').click();
+  await sleep(150);
+  ok('Pro：助教超额拦截且弹窗', win.Tutor.loadHistory().length === 0 && !doc.getElementById('pro-modal').hidden);
+  win.Tutor.clearHistory();
+  win.Tutor.saveSettings({ apiKey: '' });
+  doc.getElementById('pro-modal').hidden = true;
+
   } catch (err) {
     log.push('FAIL 用例中断 :: ' + (err && err.message ? err.message : String(err)));
   }

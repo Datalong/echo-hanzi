@@ -83,6 +83,15 @@
     pronCats: $('pron-cats'),
     btnReadQuiz: $('btn-read-quiz'),
     readQuiz: $('read-quiz'),
+    btnPro: $('btn-pro'),
+    proModal: $('pro-modal'),
+    btnProClose: $('btn-pro-close'),
+    proStatus: $('pro-status'),
+    proActivateBox: $('pro-activate'),
+    proKeyInput: $('pro-key-input'),
+    btnProActivate: $('btn-pro-activate'),
+    btnProDeactivate: $('btn-pro-deactivate'),
+    proBuyLink: $('pro-buy-link'),
     reviewList: $('review-list'),
     reviewSummary: $('review-summary'),
     btnReviewStart: $('btn-review-start'),
@@ -493,6 +502,13 @@
       flash('请先粘贴中文内容', 'bad');
       return;
     }
+    if (window.License && !isProUser() &&
+        window.Custom && window.Custom.load().length >= window.License.QUOTA.customImports) {
+      flash(t('msgNeedPro'), 'bad');
+      closeImportModal();
+      openProModal();
+      return;
+    }
     var entry = window.Custom.add((els.importName.value || '').trim(), text);
     if (!entry) {
       flash('没有识别到汉字内容', 'bad');
@@ -812,6 +828,7 @@
 
   /** 导出收藏 + 笔记为文本文件 */
   function exportFavorites() {
+    if (!window.License || !gatePro(null, t('msgNeedPro'))) return;
     if (!window.Collection) return;
     var db = window.Collection.load();
     var chars = window.Collection.recent(2000);
@@ -883,6 +900,55 @@
     showQuestion();
   }
 
+  /* ---------------- 👑 Pro 授权 ---------------- */
+
+  function isProUser() {
+    return !!(window.License && window.License.isPro());
+  }
+
+  function openProModal() {
+    if (!els.proModal || !window.License) return;
+    if (els.proBuyLink) els.proBuyLink.href = (typeof window.PRO_BUY_URL === 'string' && window.PRO_BUY_URL) || '#';
+    renderProModal();
+    els.proModal.hidden = false;
+  }
+
+  function closeProModal() {
+    if (els.proModal) els.proModal.hidden = true;
+  }
+
+  function renderProModal() {
+    var pro = isProUser();
+    if (els.proStatus) {
+      if (pro) {
+        var lic = window.License.load() || {};
+        els.proStatus.textContent = '✓ ' + t('proStatusPro') + (lic.id ? ' · ' + lic.id : '');
+        els.proStatus.className = 'pro-status is-active';
+      } else {
+        els.proStatus.textContent = t('proStatusFree');
+        els.proStatus.className = 'pro-status';
+      }
+    }
+    if (els.btnProActivate) els.btnProActivate.hidden = pro;
+    if (els.proKeyInput) els.proKeyInput.hidden = pro;
+    if (els.btnProDeactivate) els.btnProDeactivate.hidden = !pro;
+  }
+
+  /** Free 限制统一入口：返回 true=放行；否则弹升级窗 */
+  function gatePro(quotaName, message) {
+    if (!window.License) return true;
+    if (!quotaName) {
+      if (window.License.isPro()) return true;
+      flash(message || t('msgNeedPro'), 'bad');
+      openProModal();
+      return false;
+    }
+    if (window.License.allow(quotaName)) return true;
+    flash(message || t('msgNeedPro'), 'bad');
+    openProModal();
+    return false;
+  }
+
   /* ---------------- 🔊 发音听辨 (Pronunciation) ---------------- */
 
   var pronCat = 'tone';
@@ -895,6 +961,11 @@
 
   function renderPronScreen() {
     if (!window.Pron || !els.pronOptions) return;
+    if (!gatePro('pronDaily', t('pronQuota'))) {
+      els.pronOptions.textContent = '';
+      pronRound = null;
+      return;
+    }
     pronRound = window.Pron.nextRound(pronCat);
     pronStats.locked = false;
     if (els.pronQuestion) els.pronQuestion.textContent = t('pronQuestion');
@@ -934,6 +1005,7 @@
     if (pronStats.locked || !pronRound) return;
     pronStats.locked = true;
     pronStats.total++;
+    if (window.License) window.License.quotaBump('pronDaily');
     var correct = opt.hanzi === pronRound.answer.hanzi;
     if (correct) {
       pronStats.ok++;
@@ -1027,6 +1099,8 @@
       openTutorSettings();
       return;
     }
+    if (!gatePro('tutorDaily', t('tutorQuota'))) return;
+    if (window.License) window.License.quotaBump('tutorDaily');
 
     if (els.tutorInput) els.tutorInput.value = '';
     tutorAppend('user', text);
@@ -2653,6 +2727,12 @@
       });
     }
     els.level.addEventListener('change', function () {
+      if ((els.level.value === 'hsk2' || els.level.value === 'all') && !isProUser()) {
+        flash(t('msgNeedPro'), 'bad');
+        els.level.value = settings.level || 'hsk1';
+        openProModal();
+        return;
+      }
       settings.level = els.level.value;
       saveSettings();
       startSession();
@@ -2876,6 +2956,38 @@
     if (els.pronPlay) els.pronPlay.addEventListener('click', pronSpeak);
     if (els.pronNext) els.pronNext.addEventListener('click', renderPronScreen);
 
+    // Pro 绑定
+    if (els.btnPro) els.btnPro.addEventListener('click', openProModal);
+    if (els.btnProClose) els.btnProClose.addEventListener('click', closeProModal);
+    if (els.proModal) {
+      els.proModal.addEventListener('click', function (e) {
+        if (e.target === els.proModal) closeProModal();
+      });
+    }
+    if (els.btnProActivate) {
+      els.btnProActivate.addEventListener('click', function () {
+        var key = els.proKeyInput.value.trim();
+        if (!key) return;
+        window.License.activate(key).then(function (res) {
+          if (res.ok) {
+            els.proKeyInput.value = '';
+            renderProModal();
+            flash(t('proActivated'), 'good');
+          } else {
+            flash(t('proBadKey') + ' (' + res.reason + ')', 'bad');
+          }
+        });
+      });
+    }
+    if (els.btnProDeactivate) {
+      els.btnProDeactivate.addEventListener('click', function () {
+        window.License.deactivate();
+        renderProModal();
+      });
+    }
+
+    // Pro 绑定结束
+    if (els.btnPro) els.btnPro.classList.add('is-pro-btn');
     // Tutor 绑定
     if (els.btnTutorSend) {
       els.btnTutorSend.addEventListener('click', function () { tutorSend(); });
@@ -3093,6 +3205,13 @@
         if (e.key === 'Escape') {
           e.preventDefault();
           closeTutorSettings();
+        }
+        return;
+      }
+      if (els.proModal && !els.proModal.hidden) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeProModal();
         }
         return;
       }
