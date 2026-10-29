@@ -9,6 +9,7 @@ var PRECACHE_URLS = [
   './speech-rec.js',
   './pinyin.js',
   './ime.js',
+  './custom.js',
   './dict.js',
   './stories.js',
   './strokes.js',

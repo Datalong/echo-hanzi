@@ -85,7 +85,8 @@
       <button class="toggle" id="tg-sound" type="button" aria-pressed="true" title="敲击音效">
         音效
       </button>
-      <button class="toggle iconly" id="tg-lang" type="button" title="切换界面语言 (Language)">EN</button>
+      <button class="toggle" id="tg-lang" type="button" title="切换界面语言 (Language)">EN</button>
+      <button class="toggle" id="btn-import" type="button" title="导入自定义内容">导入</button>
       <button class="toggle iconly" id="tg-theme" type="button" title="切换主题">◐</button>
     </div>
   </header>
@@ -356,6 +357,25 @@
   </div>
 </div>
 
+<!-- 自定义内容导入浮层 -->
+<div class="modal-backdrop" id="import-modal" hidden>
+  <div class="share-dialog">
+    <div class="stroke-header">
+      <div class="stroke-title-wrap">
+        <h3 class="share-title" id="import-title">导入自定义内容</h3>
+      </div>
+      <button class="ghost-btn iconly stroke-close" id="btn-import-close" type="button" title="关闭 (Esc)">✕</button>
+    </div>
+    <input class="listen-input" id="import-name" type="text" placeholder="给这套内容起个名字，如：我的课文" maxlength="30" />
+    <textarea class="import-textarea" id="import-text" rows="7" placeholder="粘贴任意中文文本：课文、新闻、歌词...&#10;系统会自动切句、标音节，生成打字 / 跟读 / 听写练习"></textarea>
+    <div class="import-actions">
+      <button class="ghost-btn" id="btn-import-delete" type="button" hidden>删除已有</button>
+      <button class="primary-btn" id="btn-import-save" type="button">保存并使用</button>
+    </div>
+    <div class="import-list" id="import-list"></div>
+  </div>
+</div>
+
 <div class="focus-hint" id="focus-hint" hidden>点一下页面开始输入</div>
 </div>
 
@@ -405,6 +425,7 @@
 <script src="dict.js"></script>
 <script src="stories.js"></script>
 <script src="ime.js"></script>
+<script src="custom.js"></script>
 <script src="strokes.js"></script>
 <script src="srs.js"></script>
 <script src="stats.js"></script>

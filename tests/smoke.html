@@ -43,7 +43,7 @@ async function waitReady(frame, url) {
       const w = frame.contentWindow;
       if (d.documentElement.getAttribute('data-app-ready') === '1' &&
           d.querySelector('#pinyin .ch') &&
-          w && w.Srs && w.Stats && w.Strokes && w.Ime && w.Stories && w.Dict && w.I18n && w.Share && w.SpeechRec) {
+          w && w.Srs && w.Stats && w.Strokes && w.Ime && w.Stories && w.Dict && w.I18n && w.Share && w.SpeechRec && w.Custom) {
         return d;
       }
       await sleep(20);
@@ -612,6 +612,37 @@ window.onload = async () => {
   doc.getElementById('tab-write').click();
   await sleep(150);
   ok('四大中心：切回打字机', !doc.getElementById('screen-typing').hidden && doc.getElementById('screen-read').hidden);
+
+  // ---------- 自定义内容导入 (Import) ----------
+  ok('导入：Custom 模块可用', typeof win.Custom === 'object' && typeof win.Custom.add === 'function');
+  const entry = win.Custom.add('测试课文', '今天天气很好。我和妈妈去买菜。');
+  ok('导入：切句正确', entry && entry.sentences.length === 2, entry.sentences.join(' | '));
+  const cItems = win.Custom.toItems(entry);
+  ok('导入：拼音反查正常', cItems[0].pinyin.indexOf('jin tian') === 0, cItems[0].pinyin);
+  ok('导入：localStorage 持久化', win.Custom.load().length === 1);
+
+  // 导入弹窗交互
+  doc.getElementById('btn-import').click();
+  await sleep(150);
+  ok('导入：弹窗打开', !doc.getElementById('import-modal').hidden);
+  ok('导入：列表渲染已有条目', doc.querySelectorAll('#import-list .import-item').length === 1);
+  doc.getElementById('import-text').value = '我爱你。';
+  doc.getElementById('btn-import-save').click();
+  await sleep(200);
+  ok('导入：保存后弹窗关闭', doc.getElementById('import-modal').hidden);
+  doc.getElementById('tab-listen').click();
+  await sleep(150);
+  ok('导入：自定义句进入听力题池', doc.getElementById('spk-target-hz') !== null);
+  doc.getElementById('tab-write').click();
+  await sleep(150);
+
+  // Esc 关闭
+  doc.getElementById('btn-import').click();
+  await sleep(100);
+  doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await sleep(100);
+  ok('导入：Esc 关闭弹窗', doc.getElementById('import-modal').hidden);
+  win.Custom.remove(entry.id);
 
   // ---------- PWA 离线能力 ----------
   const mRes = await fetch('../manifest.json');

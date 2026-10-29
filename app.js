@@ -117,6 +117,14 @@
     readStoryTitle: $('read-story-title'),
     readStoryIntro: $('read-story-intro'),
     readArticle: $('read-article'),
+    btnImport: $('btn-import'),
+    importModal: $('import-modal'),
+    btnImportClose: $('btn-import-close'),
+    importName: $('import-name'),
+    importText: $('import-text'),
+    btnImportSave: $('btn-import-save'),
+    btnImportDelete: $('btn-import-delete'),
+    importList: $('import-list'),
     strokeModal: $('stroke-modal'),
     strokeChar: $('stroke-char'),
     strokeInfo: $('stroke-info'),
@@ -380,6 +388,70 @@
 
 
 
+
+  /* ---------------- 自定义内容导入 ---------------- */
+
+  function renderImportList() {
+    if (!els.importList || !window.Custom) return;
+    var items = window.Custom.load();
+    els.importList.textContent = '';
+    if (!items.length) {
+      els.importList.appendChild(span('panel-empty', '还没有导入的内容'));
+      els.btnImportDelete.hidden = true;
+      return;
+    }
+    items.forEach(function (entry) {
+      var row = document.createElement('div');
+      row.className = 'import-item';
+      var left = document.createElement('div');
+      left.appendChild(span('import-item-name', entry.title));
+      left.appendChild(span('import-item-meta', ' · ' + entry.sentences.length + ' 句'));
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'import-item-del';
+      del.textContent = '删除';
+      del.addEventListener('click', function () {
+        window.Custom.remove(entry.id);
+        renderImportList();
+      });
+      row.appendChild(left);
+      row.appendChild(del);
+      els.importList.appendChild(row);
+    });
+  }
+
+  function openImportModal() {
+    if (!els.importModal || !window.Custom) return;
+    els.importName.value = '';
+    els.importText.value = '';
+    renderImportList();
+    els.importModal.hidden = false;
+  }
+
+  function closeImportModal() {
+    if (els.importModal) els.importModal.hidden = true;
+    if (state.currentHub === 'write') focusCatcher();
+  }
+
+  function saveImported() {
+    var text = (els.importText.value || '').trim();
+    if (!text) {
+      flash('请先粘贴中文内容', 'bad');
+      return;
+    }
+    var entry = window.Custom.add((els.importName.value || '').trim(), text);
+    if (!entry) {
+      flash('没有识别到汉字内容', 'bad');
+      return;
+    }
+    flash('导入成功：' + entry.sentences.length + ' 句已加入题库', 'good');
+    closeImportModal();
+    if (state.currentHub === 'write') startSession();
+    else if (state.currentHub === 'speak') renderSpeakScreen();
+    else if (state.currentHub === 'listen') renderListenScreen();
+    else if (state.currentHub === 'read') renderReadScreen();
+  }
+
   /* ---------------- 四大核心沉浸中心路由 ---------------- */
 
   function switchHub(hub) {
@@ -413,7 +485,14 @@
   /* ---------------- 🎙️ 跟读中心 (Speak) ---------------- */
 
   function getSentencePool() {
-    return (window.SENTENCE_LISTS && window.SENTENCE_LISTS.all) || [];
+    var base = (window.SENTENCE_LISTS && window.SENTENCE_LISTS.all) || [];
+    var custom = [];
+    if (window.Custom) {
+      window.Custom.load().forEach(function (entry) {
+        custom = custom.concat(window.Custom.toItems(entry));
+      });
+    }
+    return custom.length ? custom.concat(base) : base;
   }
 
   function renderSpeakScreen() {
@@ -930,6 +1009,13 @@
       return storyQueue;
     }
     var pool = drillPool();
+    if (isSentenceMode() && !state.drill && window.Custom) {
+      var customItems = [];
+      window.Custom.load().forEach(function (entry) {
+        customItems = customItems.concat(window.Custom.toItems(entry));
+      });
+      if (customItems.length) pool = customItems.concat(pool);
+    }
     var wanted = settings.count > 0 ? settings.count : pool.length;
     var due = window.Srs ? window.Srs.dueItems(srsDb, pool) : [];
 
@@ -2118,6 +2204,14 @@
       });
     }
 
+    if (els.btnImport) els.btnImport.addEventListener('click', openImportModal);
+    if (els.btnImportClose) els.btnImportClose.addEventListener('click', closeImportModal);
+    if (els.importModal) {
+      els.importModal.addEventListener('click', function (e) {
+        if (e.target === els.importModal) closeImportModal();
+      });
+    }
+    if (els.btnImportSave) els.btnImportSave.addEventListener('click', saveImported);
     if (els.btnStats) els.btnStats.addEventListener('click', openDashboard);
     if (els.btnDashFromResult) els.btnDashFromResult.addEventListener('click', openDashboard);
     if (els.btnDashBack) els.btnDashBack.addEventListener('click', closeDashboard);
@@ -2222,6 +2316,13 @@
     });
 
     document.addEventListener('keydown', function (e) {
+      if (els.importModal && !els.importModal.hidden) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeImportModal();
+        }
+        return;
+      }
       if (els.shareModal && !els.shareModal.hidden) {
         if (e.key === 'Escape') {
           e.preventDefault();
