@@ -309,7 +309,7 @@ window.onload = async () => {
      doc.querySelectorAll('#dash-mastery .mastery-key').length === 4,
      doc.querySelectorAll('#dash-mastery .mastery-key').length + ' keys');
   ok('看板：掌握分布合计等于题量',
-     /共\s*338\s*词句/.test(doc.getElementById('dash-mastery-sub').textContent),
+     /共\s*799\s*词句/.test(doc.getElementById('dash-mastery-sub').textContent),
      doc.getElementById('dash-mastery-sub').textContent);
 
   // 看板打开时打字不应影响进度
@@ -865,6 +865,8 @@ window.onload = async () => {
   // ---------- Pro 授权 (License) ----------
   ok('Pro：License 模块可用', typeof win.License === 'object' && typeof win.License.activate === 'function');
   win.License.deactivate();
+  ok('内容：HSK3 词库 461 词', win.WORD_LISTS.hsk3 && win.WORD_LISTS.hsk3.length === 461, win.WORD_LISTS.hsk3 && win.WORD_LISTS.hsk3.length);
+  ok('内容：故事 12 篇且自带小测', win.Stories.STORIES.length === 12 && win.Stories.STORIES.every(x => x.quiz && x.quiz.length === 2));
   ok('Pro：默认免费版', win.License.isPro() === false);
   ok('Pro：免费配额定义', win.License.QUOTA.tutorDaily === 5 && win.License.QUOTA.pronDaily === 10);
 

@@ -2727,7 +2727,7 @@
       });
     }
     els.level.addEventListener('change', function () {
-      if ((els.level.value === 'hsk2' || els.level.value === 'all') && !isProUser()) {
+      if (els.level.value !== 'hsk1' && !isProUser()) {
         flash(t('msgNeedPro'), 'bad');
         els.level.value = settings.level || 'hsk1';
         openProModal();

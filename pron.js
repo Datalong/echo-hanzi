@@ -18,7 +18,9 @@
     { syllable: 'yi', chars: ['一', '姨', '椅', '亿'], pinyins: ['yī', 'yí', 'yǐ', 'yì'] },
     { syllable: 'shi', chars: ['师', '十', '史', '是'], pinyins: ['shī', 'shí', 'shǐ', 'shì'] },
     { syllable: 'xi', chars: ['西', '席', '洗', '戏'], pinyins: ['xī', 'xí', 'xǐ', 'xì'] },
-    { syllable: 'ban', chars: ['班', '掰', '板', '半'], pinyins: ['bān', 'bái', 'bǎn', 'bàn'] }
+    { syllable: 'qing', chars: ['青', '情', '请', '庆'], pinyins: ['qīng', 'qíng', 'qǐng', 'qìng'] },
+    { syllable: 'wan', chars: ['弯', '完', '晚', '万'], pinyins: ['wān', 'wán', 'wǎn', 'wàn'] },
+    { syllable: 'zhi', chars: ['之', '直', '纸', '治'], pinyins: ['zhī', 'zhí', 'zhǐ', 'zhì'] }
   ];
 
   // 声母对立组：成对的最小对立字
@@ -30,7 +32,14 @@
     { group: 'f / h', items: [['飞', 'fēi'], ['喝', 'hē']] },
     { group: 'b / p', items: [['包', 'bāo'], ['抛', 'pāo']] },
     { group: 'd / t', items: [['度', 'dù'], ['兔', 'tù']] },
-    { group: 'g / k', items: [['哥', 'gē'], ['课', 'kè']] }
+    { group: 'g / k', items: [['哥', 'gē'], ['课', 'kè']] },
+    { group: 'z / c', items: [['早', 'zǎo'], ['草', 'cǎo']] },
+    { group: 'j / q', items: [['机', 'jī'], ['七', 'qī']] },
+    { group: 'j / zh', items: [['几', 'jǐ'], ['纸', 'zhǐ']] },
+    { group: 'q / ch', items: [['七', 'qī'], ['吃', 'chī']] },
+    { group: 'x / sh', items: [['西', 'xī'], ['师', 'shī']] },
+    { group: 'r / l', items: [['热', 'rè'], ['乐', 'lè']] },
+    { group: 'm / n', items: [['妈', 'mā'], ['拿', 'ná']] }
   ];
 
   // 韵母对立组：前后鼻音 / 介音差异
@@ -40,7 +49,14 @@
     { group: 'in / ing', items: [['心', 'xīn'], ['星', 'xīng']] },
     { group: 'ian / iang', items: [['面', 'miàn'], ['亮', 'liàng']] },
     { group: 'uan / uang', items: [['万', 'wàn'], ['望', 'wàng']] },
-    { group: 'e / uo', items: [['车', 'chē'], ['桌', 'zhuō']] }
+    { group: 'e / uo', items: [['车', 'chē'], ['桌', 'zhuō']] },
+    { group: 'ao / iao', items: [['猫', 'māo'], ['苗', 'miáo']] },
+    { group: 'u / ui', items: [['书', 'shū'], ['水', 'shuǐ']] },
+    { group: 'i / ü', items: [['西', 'xī'], ['需', 'xū']] },
+    { group: 'an / ai', items: [['三', 'sān'], ['赛', 'sài']] },
+    { group: 'eng / ong', items: [['灯', 'dēng'], ['冬', 'dōng']] },
+    { group: 'ai / ei', items: [['白', 'bái'], ['北', 'běi']] },
+    { group: 'u / ou', items: [['树', 'shù'], ['手', 'shǒu']] }
   ];
 
   var CATEGORIES = ['tone', 'initial', 'final'];

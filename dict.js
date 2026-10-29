@@ -250,7 +250,7 @@
     var collocations = [];
 
     if (global.WORD_LISTS) {
-      ['hsk1', 'hsk2'].forEach(function (k) {
+      ['hsk1', 'hsk2', 'hsk3'].forEach(function (k) {
         (global.WORD_LISTS[k] || []).forEach(function (w) {
           if (w.hanzi.indexOf(char) !== -1) {
             if (!py && w.hanzi === char) {
