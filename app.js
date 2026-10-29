@@ -91,6 +91,13 @@
     homeRecent: $('home-recent'),
     homeFav: $('home-fav'),
     homeFavSub: $('home-fav-sub'),
+    selGoal: $('sel-goal'),
+    todayCount: $('today-count'),
+    todayFill: $('today-fill'),
+    todayXp: $('today-xp'),
+    todayLevel: $('today-level'),
+    todayStreak2: $('today-streak2'),
+    homeHeatmap: $('home-heatmap'),
     homeCards: $('home-cards'),
     btnHomeStart: $('btn-home-start'),
     btnHomeDash: $('btn-home-dash'),
@@ -517,6 +524,68 @@
     }
   }
 
+  /* ---------------- 📅 每日打卡 (Learning Today) ---------------- */
+
+  var GOAL_KEY = 'echo-hanzi:daily-goal:v1';
+
+  function dailyGoal() {
+    try {
+      var g = parseInt(localStorage.getItem(GOAL_KEY), 10);
+      if (g === 1 || g === 3 || g === 5) return g;
+    } catch (err) { /* ignore */ }
+    return 3;
+  }
+
+  function setDailyGoal(g) {
+    try { localStorage.setItem(GOAL_KEY, String(g)); } catch (err) { /* ignore */ }
+  }
+
+  /** 渲染今日目标 + XP 等级 + 5 周打卡热力图 */
+  function renderTodayPanel() {
+    if (!window.Stats) return;
+    var goal = dailyGoal();
+    if (els.selGoal && els.selGoal.value !== String(goal)) els.selGoal.value = String(goal);
+
+    var daily = window.Stats.dailyMap(statsDb);
+    var todayKey = new Date().toISOString().slice(0, 10);
+    var today = daily[todayKey] || { sessions: 0, chars: 0, items: 0 };
+
+    if (els.todayCount) {
+      els.todayCount.textContent = Math.min(today.sessions, goal) + '/' + goal;
+      els.todayCount.style.color = today.sessions >= goal ? 'var(--accent)' : '';
+    }
+    if (els.todayFill) {
+      var pct = Math.min(100, Math.round(today.sessions / goal * 100));
+      els.todayFill.style.width = pct + '%';
+    }
+    if (els.todayXp) els.todayXp.textContent = String(window.Stats.totalXp(statsDb));
+    var lv = window.Stats.level(statsDb);
+    if (els.todayLevel) {
+      els.todayLevel.textContent = 'Lv.' + lv.level;
+      els.todayLevel.title = lv.cur + ' / ' + lv.need + ' XP';
+    }
+    if (els.todayStreak2) els.todayStreak2.textContent = String(calcStreak());
+
+    // 热力图：最近 35 天，从最旧到今天
+    if (els.homeHeatmap) {
+      els.homeHeatmap.textContent = '';
+      var cursor = new Date();
+      cursor.setDate(cursor.getDate() - 34);
+      for (var i = 0; i < 35; i++) {
+        var key = cursor.toISOString().slice(0, 10);
+        var rec = daily[key];
+        var cell = document.createElement('span');
+        var n = rec ? rec.sessions : 0;
+        cell.className = 'heat-cell' +
+          (n === 0 ? '' : n === 1 ? ' h1' : n === 2 ? ' h2' : ' h3');
+        cell.title = key + ' · ' + n + ' ' + t('unitWord');
+        if (key === todayKey) cell.classList.add('is-today');
+        els.homeHeatmap.appendChild(cell);
+        cursor.setDate(cursor.getDate() + 1);
+      }
+    }
+  }
+
   /* ---------------- 🏠 学习总览 (Home) ---------------- */
 
   /** 连续练习天数：从最近一次向前数连续有练习的自然日 */
@@ -543,6 +612,7 @@
     if (window.Srs) srsDb = window.Srs.load();
 
     var sum = window.Stats ? window.Stats.summary(statsDb) : { sessions: 0, avgCpm: 0, avgAcc: 0 };
+    renderTodayPanel();
 
     // 待复习数：全词库 + 句库 + 自定义
     var pool = (window.WORD_LISTS.all || []).slice();
@@ -2488,6 +2558,13 @@
         state.statsOpen = true;
         renderDashboard();
         els.stats.hidden = false;
+      });
+    }
+
+    if (els.selGoal) {
+      els.selGoal.addEventListener('change', function () {
+        setDailyGoal(parseInt(els.selGoal.value, 10) || 3);
+        renderTodayPanel();
       });
     }
 

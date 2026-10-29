@@ -764,6 +764,23 @@ window.onload = async () => {
   win.Tutor.clearHistory();
   win.Tutor.saveSettings({ apiKey: '' });
 
+  // ---------- 每日打卡 (Learning Today) ----------
+  ok('打卡：Stats.dailyMap 可用', typeof win.Stats.dailyMap === 'function');
+  ok('打卡：XP 计算非负', win.Stats.totalXp(win.Stats.load()) >= 0);
+  const lv = win.Stats.level(win.Stats.load());
+  ok('打卡：等级计算', lv.level >= 1 && lv.need > 0, JSON.stringify(lv));
+  doc.getElementById('tab-home').click();
+  await sleep(150);
+  ok('打卡：今日轮数显示', /\d+\/\d+/.test(doc.getElementById('today-count').textContent), doc.getElementById('today-count').textContent);
+  ok('打卡：热力图 35 格', doc.querySelectorAll('#home-heatmap .heat-cell').length === 35);
+  ok('打卡：今日格高亮', !!doc.querySelector('#home-heatmap .heat-cell.is-today'));
+  doc.getElementById('sel-goal').value = '5';
+  doc.getElementById('sel-goal').dispatchEvent(new win.Event('change', { bubbles: true }));
+  await sleep(100);
+  ok('打卡：目标切换生效', doc.getElementById('today-count').textContent.indexOf('/5') !== -1, doc.getElementById('today-count').textContent);
+  doc.getElementById('sel-goal').value = '3';
+  doc.getElementById('sel-goal').dispatchEvent(new win.Event('change', { bubbles: true }));
+
   } catch (err) {
     log.push('FAIL 用例中断 :: ' + (err && err.message ? err.message : String(err)));
   }

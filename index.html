@@ -150,6 +150,43 @@
         <div class="home-weak" id="home-weak"></div>
       </section>
       <section class="panel home-panel home-panel-wide">
+        <div class="panel-head">
+          <h3 class="panel-title" id="today-title">今日目标</h3>
+          <span class="panel-sub">
+            <label class="today-goal-label">
+              <select id="sel-goal" class="today-goal-select">
+                <option value="1">1 轮</option>
+                <option value="3" selected>3 轮</option>
+                <option value="5">5 轮</option>
+              </select>
+            </label>
+          </span>
+        </div>
+        <div class="today-box">
+          <div class="today-stats">
+            <div class="today-stat">
+              <span class="today-stat-v" id="today-count">0/3</span>
+              <span class="today-stat-k" id="today-k">今日轮数</span>
+            </div>
+            <div class="today-stat">
+              <span class="today-stat-v" id="today-xp">0</span>
+              <span class="today-stat-k">XP</span>
+            </div>
+            <div class="today-stat">
+              <span class="today-stat-v" id="today-level">Lv.1</span>
+              <span class="today-stat-k" id="today-level-k">等级</span>
+            </div>
+            <div class="today-stat">
+              <span class="today-stat-v" id="today-streak2">0</span>
+              <span class="today-stat-k" id="today-streak-k">连续天数</span>
+            </div>
+          </div>
+          <div class="today-bar"><div class="today-bar-fill" id="today-fill"></div></div>
+          <div class="heatmap" id="home-heatmap" title="最近 5 周打卡"></div>
+        </div>
+      </section>
+
+      <section class="panel home-panel home-panel-wide">
         <div class="panel-head"><h3 class="panel-title">生词收藏</h3><span class="panel-sub" id="home-fav-sub">点击微词典里的 ☆ 收藏，自动进入复习流</span></div>
         <div class="home-fav" id="home-fav"></div>
       </section>

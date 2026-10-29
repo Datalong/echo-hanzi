@@ -128,6 +128,40 @@
     };
   }
 
+  /** 按自然日聚合最近练习：dateStr -> {sessions, chars, items} */
+  function dailyMap(db) {
+    var map = {};
+    (db.sessions || []).forEach(function (s) {
+      if (!s.t) return;
+      var key = new Date(s.t).toISOString().slice(0, 10);
+      var rec = map[key] || (map[key] = { sessions: 0, chars: 0, items: 0 });
+      rec.sessions++;
+      rec.chars += s.chars || 0;
+      rec.items += s.items || 0;
+    });
+    return map;
+  }
+
+  /** 经验值：每轮 = 完成题数×10 + 累计字符数 */
+  function totalXp(db) {
+    return (db.sessions || []).reduce(function (sum, s) {
+      return sum + (s.items || 0) * 10 + (s.chars || 0);
+    }, 0);
+  }
+
+  /** 等级：每级需要 level×200 经验，返回 {level, cur, need} */
+  function level(db) {
+    var xp = totalXp(db);
+    var lvl = 1;
+    var need = 200;
+    while (xp >= need) {
+      xp -= need;
+      lvl++;
+      need = lvl * 200;
+    }
+    return { level: lvl, cur: xp, need: need };
+  }
+
   var api = {
     STORAGE_KEY: STORAGE_KEY,
     MAX_SESSIONS: MAX_SESSIONS,
@@ -138,6 +172,9 @@
     recordSyllables: recordSyllables,
     recordSession: recordSession,
     rank: rank,
+    dailyMap: dailyMap,
+    totalXp: totalXp,
+    level: level,
     summary: summary
   };
 
