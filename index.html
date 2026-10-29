@@ -149,6 +149,11 @@
         <div class="home-weak" id="home-weak"></div>
       </section>
       <section class="panel home-panel home-panel-wide">
+        <div class="panel-head"><h3 class="panel-title">生词收藏</h3><span class="panel-sub" id="home-fav-sub">点击微词典里的 ☆ 收藏，自动进入复习流</span></div>
+        <div class="home-fav" id="home-fav"></div>
+      </section>
+
+      <section class="panel home-panel home-panel-wide">
         <div class="panel-head"><h3 class="panel-title">最近练习</h3><span class="panel-sub">最近 5 轮</span></div>
         <div class="home-recent" id="home-recent"></div>
       </section>
@@ -278,6 +283,7 @@
           <div class="dict-char-group">
             <span class="dict-char" id="dt-char">喝</span>
             <span class="dict-py" id="dt-py">hē</span>
+            <button class="dict-icon-btn" id="dt-btn-fav" type="button" title="收藏生词">☆</button>
             <button class="dict-icon-btn" id="dt-btn-speak" type="button" title="发音">🔊</button>
           </div>
           <button class="dict-icon-btn" id="dt-btn-stroke" type="button" title="查看笔顺">✍️</button>
@@ -487,6 +493,7 @@
 <script src="share.js"></script>
 <script src="i18n.js"></script>
 <script src="dict.js"></script>
+<script src="collection.js"></script>
 <script src="stories.js"></script>
 <script src="ime.js"></script>
 <script src="custom.js"></script>

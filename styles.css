@@ -2029,3 +2029,30 @@ kbd {
   .home-panels { grid-template-columns: 1fr; }
   .home-hero-stats { width: 100%; justify-content: space-between; }
 }
+
+/* ---------------- ⭐ 生词收藏 ---------------- */
+
+.fav-chip {
+  appearance: none;
+  font: inherit;
+  font-size: 20px;
+  color: var(--text);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.fav-chip:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.home-fav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

@@ -693,6 +693,33 @@ window.onload = async () => {
      doc.querySelector('meta[name="theme-color"]') &&
      doc.querySelector('meta[name="apple-mobile-web-app-capable"]'));
 
+  // ---------- 生词收藏 (Word Collection) ----------
+  ok('收藏：Collection 模块可用', typeof win.Collection === 'object' && typeof win.Collection.toggle === 'function');
+  win.Collection.reset();
+  const fav1 = win.Collection.toggle('茶', { pinyin: 'chá', english: 'tea' });
+  ok('收藏：toggle 收藏生效', fav1 === true && win.Collection.has('茶') && win.Collection.count() === 1);
+  ok('收藏：toggle 取消收藏', win.Collection.toggle('茶') === false && !win.Collection.has('茶'));
+  win.Collection.toggle('茶');
+  ok('收藏：recent 列表', win.Collection.recent(5).indexOf('茶') !== -1);
+
+  // 总览页展示收藏面板
+  doc.getElementById('tab-home').click();
+  await sleep(150);
+  ok('收藏：总览收藏面板渲染', doc.getElementById('home-fav').textContent.indexOf('茶') !== -1);
+
+  // 微词典收藏按钮
+  const dtFav = doc.getElementById('dt-btn-fav');
+  ok('收藏：微词典收藏按钮存在', !!dtFav);
+  win.Collection.reset();
+  dtFav.click();
+  await sleep(100);
+  ok('收藏：点击后变★并入库', dtFav.textContent === '★' && win.Collection.count() === 1);
+  // 新收藏自动进入 SRS 复习流（含该字的词拿到到期记录）
+  const srsDbNow = win.Srs.load();
+  const dueNow = Object.keys(srsDbNow).filter(k => srsDbNow[k].due && srsDbNow[k].due <= Date.now());
+  ok('收藏：新收藏自动进入 SRS 到期队列', dueNow.length > 0, dueNow.join(','));
+  win.Collection.reset();
+
   } catch (err) {
     log.push('FAIL 用例中断 :: ' + (err && err.message ? err.message : String(err)));
   }

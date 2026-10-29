@@ -45,6 +45,7 @@
     dtRadDesc: $('dt-rad-desc'),
     dtCollocs: $('dt-collocs'),
     dtBtnSpeak: $('dt-btn-speak'),
+    dtBtnFav: $('dt-btn-fav'),
     dtBtnStroke: $('dt-btn-stroke'),
     tones: $('tg-tones'),
     ime: $('tg-ime'),
@@ -74,6 +75,8 @@
     homeSrs: $('home-srs'),
     homeWeak: $('home-weak'),
     homeRecent: $('home-recent'),
+    homeFav: $('home-fav'),
+    homeFavSub: $('home-fav-sub'),
     homeCards: $('home-cards'),
     btnHomeStart: $('btn-home-start'),
     btnHomeDash: $('btn-home-dash'),
@@ -576,6 +579,29 @@
       }
     }
 
+    // 生词收藏
+    if (els.homeFav) {
+      els.homeFav.textContent = '';
+      var favs = window.Collection ? window.Collection.recent(24) : [];
+      if (!favs.length) {
+        els.homeFav.appendChild(span('panel-empty', t('homeFavEmpty')));
+      } else {
+        if (els.homeFavSub) els.homeFavSub.textContent =
+          t('homeFavSub') + ' · ' + (window.Collection ? window.Collection.count() : favs.length);
+        favs.forEach(function (ch) {
+          var chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'fav-chip';
+          chip.textContent = ch;
+          chip.title = window.Dict ? (window.Dict.lookup(ch) || {}).pinyin || '' : '';
+          chip.addEventListener('click', function () {
+            if (window.Speech) window.Speech.speak(ch, 0.82);
+          });
+          els.homeFav.appendChild(chip);
+        });
+      }
+    }
+
     // 最近练习
     if (els.homeRecent) {
       els.homeRecent.textContent = '';
@@ -827,6 +853,11 @@
     els.dtDef.textContent = info.definition;
     els.dtRad.textContent = '部首 ' + info.radical;
     els.dtRadDesc.textContent = info.radicalMeaning;
+    if (els.dtBtnFav) {
+      var saved = window.Collection && window.Collection.has(info.char);
+      els.dtBtnFav.textContent = saved ? '★' : '☆';
+      els.dtBtnFav.title = saved ? t('dictFavOn') : t('dictFav');
+    }
 
     els.dtCollocs.textContent = '';
     (info.collocations || []).forEach(function (c) {
@@ -850,6 +881,42 @@
     }
 
     els.dictTooltip.hidden = false;
+  }
+
+  /** 收藏/取消当前微词典中的字；新收藏自动进入 SRS 复习流 */
+  function toggleDictFavorite() {
+    if (!window.Collection) return;
+    var ch = state.dictChar;
+    if (!ch) {
+      // 兜底：词典未弹出时用当前卡片字/首字
+      var cur2 = currentItem();
+      ch = cur2 ? (cur2.hanzi || '').charAt(0) : '';
+    }
+    if (!ch) return;
+    var cur = currentItem();
+    var added = window.Collection.toggle(ch, {
+      pinyin: cur ? cur.pinyin : '',
+      english: cur ? cur.english : ''
+    });
+    if (els.dtBtnFav) {
+      els.dtBtnFav.textContent = added ? '★' : '☆';
+      els.dtBtnFav.title = added ? t('dictFavOn') : t('dictFav');
+    }
+    if (added && window.Srs) {
+      // 新收藏：给含该字的词造「已到期」的 SRS 记录，下一轮练习时排在最前
+      var now = Date.now();
+      var words = (window.WORD_LISTS && window.WORD_LISTS.all || [])
+        .filter(function (w) { return w.hanzi.indexOf(ch) !== -1; })
+        .slice(0, 5);
+      words.forEach(function (w) {
+        var key = window.Srs.keyOf(w);
+        if (!srsDb[key]) {
+          srsDb[key] = { reps: 0, lapses: 0, interval: 0, due: now, seen: 0, errors: 0, last: 0 };
+        }
+      });
+      window.Srs.save(srsDb);
+    }
+    flash(added ? t('msgFavAdd') : t('msgFavRemove'), 'good');
   }
 
   function setupDictHover(el, getCharFn) {
@@ -2210,6 +2277,12 @@
 
     if (els.btnShowStroke) els.btnShowStroke.addEventListener('click', function () { openStrokeModal(); });
 
+    if (els.dtBtnFav) {
+      els.dtBtnFav.addEventListener('click', function (e) {
+        e.stopPropagation();
+        toggleDictFavorite();
+      });
+    }
     if (els.dtBtnSpeak) {
       els.dtBtnSpeak.addEventListener('click', function () {
         if (state.dictChar) speak(state.dictChar);
