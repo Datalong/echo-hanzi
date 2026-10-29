@@ -147,4 +147,86 @@
   })();
 
   global.SpeechRec = Engine;
+
+  /* ---------------- 🎙️ 录音回放（对比示范音用） ----------------
+   * 与识别引擎并行：getUserMedia + MediaRecorder 独立录音，
+   * 停止后返回可回放的 blob URL，用于「我的录音 vs 示范音」A/B 对比。 */
+  var recorder = null;
+  var recChunks = [];
+  var recStream = null;
+
+  function startRecording() {
+    if (!global.navigator || !navigator.mediaDevices || !global.MediaRecorder) {
+      return Promise.resolve(false);
+    }
+    return navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      recStream = stream;
+      recChunks = [];
+      recorder = new MediaRecorder(stream);
+      recorder.ondataavailable = function (e) { if (e.data && e.data.size) recChunks.push(e.data); };
+      recorder.start();
+      return true;
+    }).catch(function () { return false; });
+  }
+
+  /** 停止录音，回调拿到回放 URL（失败传 null） */
+  function stopRecording(cb) {
+    if (!recorder || recorder.state === 'inactive') {
+      if (cb) cb(null);
+      return;
+    }
+    recorder.onstop = function () {
+      var url = null;
+      try {
+        url = URL.createObjectURL(new Blob(recChunks, { type: recorder.mimeType || 'audio/webm' }));
+      } catch (err) { /* ignore */ }
+      if (recStream) recStream.getTracks().forEach(function (t) { t.stop(); });
+      recStream = null;
+      recorder = null;
+      if (cb) cb(url);
+    };
+    try { recorder.stop(); } catch (err) { if (cb) cb(null); }
+  }
+
+  /* ---------------- 🎤 自由听写（AI 助教语音输入用） ----------------
+   * 与目标句引擎独立的识别实例：转写最终结果回调，无评分目标。 */
+  var dictationRec = null;
+  var dictating = false;
+
+  function startDictation(onText, onEnd) {
+    if (!supported || dictating) return false;
+    try {
+      dictationRec = new SpeechRecognition();
+      dictationRec.continuous = false;
+      dictationRec.interimResults = true;
+      dictationRec.lang = 'zh-CN';
+    } catch (err) { return false; }
+    dictating = true;
+    dictationRec.onresult = function (event) {
+      var text = '';
+      for (var i = 0; i < event.results.length; i++) text += event.results[i][0].transcript;
+      if (onText) onText(text);
+    };
+    dictationRec.onerror = function () { dictating = false; if (onEnd) onEnd(); };
+    dictationRec.onend = function () { dictating = false; if (onEnd) onEnd(); };
+    try {
+      dictationRec.start();
+      return true;
+    } catch (err) {
+      dictating = false;
+      return false;
+    }
+  }
+
+  function stopDictation() {
+    if (dictationRec) { try { dictationRec.stop(); } catch (err) {} }
+  }
+
+  function isDictating() { return dictating; }
+
+  Engine.startRecording = startRecording;
+  Engine.stopRecording = stopRecording;
+  Engine.startDictation = startDictation;
+  Engine.stopDictation = stopDictation;
+  Engine.isDictating = isDictating;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

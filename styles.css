@@ -2514,3 +2514,21 @@ kbd {
 }
 
 .pro-activate input { flex: 1; font-size: 12px; }
+
+/* 🎙️ 录音回放 & 助教语音输入 */
+
+#btn-spk-replay {
+  margin-left: 10px;
+  font-size: 12px;
+}
+
+#btn-tutor-mic.is-recording {
+  border-color: var(--danger, #e05b5b);
+  color: var(--danger, #e05b5b);
+  animation: micPulse 1s ease infinite;
+}
+
+@keyframes micPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

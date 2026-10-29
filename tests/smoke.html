@@ -867,6 +867,11 @@ window.onload = async () => {
   win.License.deactivate();
   ok('内容：HSK3 词库 461 词', win.WORD_LISTS.hsk3 && win.WORD_LISTS.hsk3.length === 461, win.WORD_LISTS.hsk3 && win.WORD_LISTS.hsk3.length);
   ok('内容：故事 12 篇且自带小测', win.Stories.STORIES.length === 12 && win.Stories.STORIES.every(x => x.quiz && x.quiz.length === 2));
+  ok('P3：IME 前缀联想 niha→你好', win.Ime.queryCandidates('niha', '').indexOf('你好') !== -1, win.Ime.queryCandidates('niha','').join(','));
+  ok('P3：IME 完整拼音词组优先', win.Ime.queryCandidates('nihao', '').indexOf('你好') !== -1);
+  ok('P3：录音器 API 存在', typeof win.SpeechRec.startRecording === 'function' && typeof win.SpeechRec.stopRecording === 'function');
+  ok('P3：自由听写 API 存在', typeof win.SpeechRec.startDictation === 'function' && typeof win.SpeechRec.isDictating === 'function');
+
   ok('Pro：默认免费版', win.License.isPro() === false);
   ok('Pro：免费配额定义', win.License.QUOTA.tutorDaily === 5 && win.License.QUOTA.pronDaily === 10);
 

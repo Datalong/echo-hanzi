@@ -415,6 +415,17 @@
         });
       });
     }
+    // 高频问候语补种（词库未覆盖的常用词组）
+    var seeds = {
+      'nihao': ['你好'],
+      'xiexie': ['谢谢'],
+      'zaijian': ['再见'],
+      'huanying': ['欢迎']
+    };
+    Object.keys(seeds).forEach(function (k) {
+      if (!PHRASE_TABLE[k]) PHRASE_TABLE[k] = seeds[k];
+      else seeds[k].forEach(function (w) { if (PHRASE_TABLE[k].indexOf(w) === -1) PHRASE_TABLE[k].push(w); });
+    });
   }
 
   // 立即构建词组表
@@ -443,6 +454,24 @@
       CANDIDATE_TABLE[py].forEach(function (c) {
         if (out.indexOf(c) === -1) out.push(c);
       });
+    }
+
+    // 2.5 前缀联想：用户敲到一半时，把以已敲串为前缀的词组补进候选尾部
+    if (py.length >= 2 && out.length < 9) {
+      var seen = out.slice();
+      var keys = Object.keys(PHRASE_TABLE);
+      for (var k = 0; k < keys.length && out.length < 9; k++) {
+        var key = keys[k];
+        if (key.length > py.length && key.indexOf(py) === 0) {
+          var words = PHRASE_TABLE[key];
+          for (var w2 = 0; w2 < words.length && out.length < 9; w2++) {
+            if (seen.indexOf(words[w2]) === -1) {
+              out.push(words[w2]);
+              seen.push(words[w2]);
+            }
+          }
+        }
+      }
     }
 
     // 3. 如果当前目标汉字恰好以此拼音为注音，确保它在候选前列（提升学习顺畅度）

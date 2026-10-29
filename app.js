@@ -100,6 +100,8 @@
     tutorInput: $('tutor-input'),
     tutorStatus: $('tutor-status'),
     btnTutorSend: $('btn-tutor-send'),
+    btnTutorMic: $('btn-tutor-mic'),
+    btnSpkReplay: $('btn-spk-replay'),
     btnTutorClear: $('btn-tutor-clear'),
     btnTutorSettings: $('btn-tutor-settings'),
     tutorModal: $('tutor-modal'),
@@ -1044,6 +1046,34 @@
   /* ---------------- 🤖 AI 助教 (Tutor) ---------------- */
 
   var tutorBusy = false;
+  var tutorMicOn = false;
+
+  /** 🎙️ 助教语音输入：按一下说话，识别完自动填入并发送 */
+  function toggleTutorMic() {
+    if (!window.SpeechRec || !window.SpeechRec.startDictation) {
+      flash('当前浏览器不支持语音识别', 'bad');
+      return;
+    }
+    if (tutorMicOn) {
+      window.SpeechRec.stopDictation();
+      return;
+    }
+    tutorMicOn = true;
+    if (els.btnTutorMic) els.btnTutorMic.classList.add('is-recording');
+    var ok = window.SpeechRec.startDictation(
+      function (text) { if (els.tutorInput) els.tutorInput.value = text; },
+      function () {
+        tutorMicOn = false;
+        if (els.btnTutorMic) els.btnTutorMic.classList.remove('is-recording');
+        var text = els.tutorInput ? els.tutorInput.value.trim() : '';
+        if (text) tutorSend();
+      }
+    );
+    if (!ok) {
+      tutorMicOn = false;
+      if (els.btnTutorMic) els.btnTutorMic.classList.remove('is-recording');
+    }
+  }
 
   function tutorMsgRow(role, text) {
     var row = document.createElement('div');
@@ -1199,6 +1229,20 @@
         });
 
         els.spkScoreVal.textContent = evalRes.accuracy + '%';
+        // 停止录音并准备回放
+        if (window.SpeechRec && window.SpeechRec.stopRecording) {
+          window.SpeechRec.stopRecording(function (url) {
+            if (els.btnSpkReplay) {
+              els.btnSpkReplay.hidden = !url;
+              if (url) {
+                els.btnSpkReplay.onclick = function () {
+                  var audio = new Audio(url);
+                  audio.play();
+                };
+              }
+            }
+          });
+        }
         if (evalRes.accuracy >= 90) {
           els.spkScoreDesc.textContent = t('spkPerfect');
           if (settings.sound) window.Sound.success();
@@ -1216,6 +1260,12 @@
         if (els.micLabel) {
           els.micLabel.textContent = isRec ? t('btnMicRecording') : t('btnMicIdle');
         }
+        // 同步录音器
+        if (window.SpeechRec && window.SpeechRec.startRecording) {
+          if (isRec) window.SpeechRec.startRecording();
+          else window.SpeechRec.stopRecording(function () {});
+        }
+        if (els.btnSpkReplay) els.btnSpkReplay.hidden = true;
       },
       onError: function (err) {
         flash('麦克风识别错误: ' + err, 'bad');
@@ -2989,6 +3039,9 @@
     // Pro 绑定结束
     if (els.btnPro) els.btnPro.classList.add('is-pro-btn');
     // Tutor 绑定
+    if (els.btnTutorMic) {
+      els.btnTutorMic.addEventListener('click', toggleTutorMic);
+    }
     if (els.btnTutorSend) {
       els.btnTutorSend.addEventListener('click', function () { tutorSend(); });
     }
