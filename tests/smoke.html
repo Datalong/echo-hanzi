@@ -581,7 +581,7 @@ window.onload = async () => {
   ok('海报：Esc 关闭海报浮层', doc.getElementById('share-modal').hidden);
 
   // ---------- 四大中心全局架构 (Listen / Speak / Read / Write) ----------
-  ok('五大中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 6);
+  ok('六大中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 7);
   ok('总览：默认落在学习总览', !doc.getElementById('screen-home').hidden);
   ok('总览：记忆状态四档渲染', doc.getElementById('home-srs').children.length === 4);
   ok('总览：四张学习中心卡片', doc.getElementById('home-cards').querySelectorAll('.home-card').length === 4);
@@ -780,6 +780,24 @@ window.onload = async () => {
   ok('打卡：目标切换生效', doc.getElementById('today-count').textContent.indexOf('/5') !== -1, doc.getElementById('today-count').textContent);
   doc.getElementById('sel-goal').value = '3';
   doc.getElementById('sel-goal').dispatchEvent(new win.Event('change', { bubbles: true }));
+
+  // ---------- 复习中心 (Review Center) ----------
+  ok('复习：导航 Tab 存在', !!doc.getElementById('tab-review'));
+  // 造一条到期记录
+  const srsDb2 = win.Srs.load();
+  srsDb2['w:爱'] = { reps: 1, lapses: 0, interval: 1, due: Date.now() - 3600e3, seen: 1, errors: 0, last: Date.now() - 86400e3 };
+  win.Srs.save(srsDb2);
+  doc.getElementById('tab-review').click();
+  await sleep(150);
+  ok('复习：进入复习中心', !doc.getElementById('screen-review').hidden);
+  ok('复习：到期列表渲染', doc.getElementById('review-list').textContent.indexOf('爱') !== -1);
+  ok('复习：开始按钮可见', !doc.getElementById('btn-review-start').hidden);
+  doc.getElementById('btn-review-start').click();
+  await sleep(200);
+  ok('复习：进入纯复习轮', !doc.getElementById('screen-typing').hidden);
+  ok('复习：首题带复习角标', doc.getElementById('card-badge').textContent.length > 0);
+  ok('复习：角标为「复习」', doc.getElementById('card-badge').textContent === '复习' || doc.getElementById('card-badge').textContent === 'Review', doc.getElementById('card-badge').textContent);
+  win.Srs.reset();
 
   } catch (err) {
     log.push('FAIL 用例中断 :: ' + (err && err.message ? err.message : String(err)));

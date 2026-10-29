@@ -30,6 +30,7 @@
       <button class="hub-tab" id="tab-speak" type="button" data-hub="speak">🎙️ 跟读</button>
       <button class="hub-tab" id="tab-listen" type="button" data-hub="listen">🎧 听力</button>
       <button class="hub-tab" id="tab-read" type="button" data-hub="read">📖 阅读</button>
+      <button class="hub-tab" id="tab-review" type="button" data-hub="review">📋 复习</button>
       <button class="hub-tab" id="tab-tutor" type="button" data-hub="tutor">🤖 助教</button>
     </nav>
 
@@ -285,6 +286,17 @@
           placeholder="用中文或英文问助教..." autocomplete="off" />
         <button class="primary-btn" id="btn-tutor-send" type="button">发送</button>
       </div>
+    </div>
+  </section>
+
+  <!-- 📋 复习中心 (Review) -->
+  <section class="screen review-screen" id="screen-review" hidden>
+    <div class="speak-header">
+      <span class="runline" id="review-summary">0 个到期</span>
+      <button class="primary-btn" id="btn-review-start" type="button" hidden>开始复习轮 →</button>
+    </div>
+    <div class="card review-card">
+      <div class="review-list" id="review-list"></div>
     </div>
   </section>
 

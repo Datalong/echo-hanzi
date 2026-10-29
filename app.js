@@ -71,6 +71,10 @@
     stats: $('screen-stats'),
     screenHome: $('screen-home'),
     screenTutor: $('screen-tutor'),
+    screenReview: $('screen-review'),
+    reviewList: $('review-list'),
+    reviewSummary: $('review-summary'),
+    btnReviewStart: $('btn-review-start'),
     tutorMessages: $('tutor-messages'),
     tutorChips: $('tutor-chips'),
     tutorInput: $('tutor-input'),
@@ -262,6 +266,7 @@
 
     q('tab-home', t('navHome'));
     q('tab-tutor', t('navTutor'));
+    q('tab-review', t('navReview'));
     q('tab-write', t('navWrite'));
     q('tab-speak', t('navSpeak'));
     q('tab-listen', t('navListen'));
@@ -499,6 +504,7 @@
     els.typing.hidden = (hub !== 'write');
     els.screenHome.hidden = (hub !== 'home');
     els.screenTutor.hidden = (hub !== 'tutor');
+    els.screenReview.hidden = (hub !== 'review');
     els.screenSpeak.hidden = (hub !== 'speak');
     els.screenListen.hidden = (hub !== 'listen');
     els.screenRead.hidden = (hub !== 'read');
@@ -511,6 +517,8 @@
 
     if (hub === 'home') {
       renderHomeScreen();
+    } else if (hub === 'review') {
+      renderReviewScreen();
     } else if (hub === 'tutor') {
       renderTutorScreen();
     } else if (hub === 'write') {
@@ -710,6 +718,80 @@
         });
       }
     }
+  }
+
+  /* ---------------- 📋 复习中心 (Review) ---------------- */
+
+  /** 全题库（词 + 句 + 自定义） */
+  function fullPool() {
+    var pool = (window.WORD_LISTS && window.WORD_LISTS.all || []).slice();
+    if (window.SENTENCE_LISTS) pool = pool.concat(window.SENTENCE_LISTS.all || []);
+    if (window.Custom) {
+      window.Custom.load().forEach(function (entry) {
+        pool = pool.concat(window.Custom.toItems(entry));
+      });
+    }
+    return pool;
+  }
+
+  function renderReviewScreen() {
+    if (!window.Srs || !els.reviewList) return;
+    srsDb = window.Srs.load();
+    var due = window.Srs.dueItems(srsDb, fullPool());
+    var st = window.Srs.stats(srsDb, fullPool());
+
+    if (els.reviewSummary) {
+      els.reviewSummary.textContent = due.length + ' ' + t('reviewDueCount') +
+        ' · ' + st.learning + ' ' + t('homeLearning') + ' · ' + st.mastered + ' ' + t('homeMastered');
+    }
+    if (els.btnReviewStart) els.btnReviewStart.hidden = !due.length;
+
+    els.reviewList.textContent = '';
+    if (!due.length) {
+      els.reviewList.appendChild(span('panel-empty', t('reviewEmpty')));
+      return;
+    }
+
+    due.slice(0, 60).forEach(function (entry) {
+      var item = entry.item;
+      var rec = srsDb[window.Srs.keyOf(item)] || {};
+      var row = document.createElement('div');
+      row.className = 'review-row';
+
+      var main = document.createElement('div');
+      main.className = 'review-main';
+      main.appendChild(span('review-hz', item.hanzi));
+      main.appendChild(span('review-py', item.pinyin || ''));
+      main.appendChild(span('review-en', item.english || ''));
+
+      var side = document.createElement('div');
+      side.className = 'review-side';
+      var overdue = Date.now() - entry.due;
+      side.appendChild(span('review-due',
+        overdue > 864e5 ? t('reviewOverdue').replace('{n}', Math.floor(overdue / 864e5)) : t('reviewDueNow')));
+      var speak = document.createElement('button');
+      speak.type = 'button';
+      speak.className = 'dict-icon-btn';
+      speak.textContent = '🔊';
+      speak.addEventListener('click', function () {
+        if (window.Speech) window.Speech.speak(item.hanzi, 0.84);
+      });
+      side.appendChild(speak);
+
+      row.appendChild(main);
+      row.appendChild(side);
+      els.reviewList.appendChild(row);
+    });
+    if (due.length > 60) {
+      els.reviewList.appendChild(span('panel-empty', t('reviewMore').replace('{n}', due.length - 60)));
+    }
+  }
+
+  /** 只复习到期题的一轮 */
+  function startReviewSession() {
+    state.reviewOnly = true;
+    switchHub('write');
+    startSession();
   }
 
   /* ---------------- 🤖 AI 助教 (Tutor) ---------------- */
@@ -1401,6 +1483,19 @@
     var out = [];
     var reviewKeys = {};
     state.dueCount = due.length;
+
+    // 复习中心模式：只出全题库里的到期题，一轮结束自动还原
+    if (state.reviewOnly && window.Srs) {
+      var reviewDue = window.Srs.dueItems(srsDb, fullPool());
+      reviewDue.slice(0, wanted).forEach(function (entry) {
+        out.push(entry.item);
+        reviewKeys[window.Srs.keyOf(entry.item)] = true;
+      });
+      state.dueCount = reviewDue.length;
+      state.reviewOnly = false;
+      state.reviewKeys = reviewKeys;
+      return out;
+    }
 
     due.slice(0, wanted).forEach(function (entry) {
       out.push(entry.item);
@@ -2566,6 +2661,10 @@
         setDailyGoal(parseInt(els.selGoal.value, 10) || 3);
         renderTodayPanel();
       });
+    }
+
+    if (els.btnReviewStart) {
+      els.btnReviewStart.addEventListener('click', startReviewSession);
     }
 
     // Tutor 绑定
