@@ -77,12 +77,25 @@
     } catch (err) { /* ignore */ }
   }
 
+  /** 更新某个字的笔记，返回是否成功 */
+  function updateNote(ch, note) {
+    if (!ch) return false;
+    var db = load();
+    if (!db[ch]) {
+      db[ch] = { pinyin: '', english: '', addedAt: Date.now() };
+    }
+    db[ch].note = (note || '').slice(0, 120);
+    save(db);
+    return true;
+  }
+
   var api = {
     STORAGE_KEY: STORAGE_KEY,
     load: load,
     save: save,
     has: has,
     toggle: toggle,
+    updateNote: updateNote,
     recent: recent,
     count: count,
     reset: reset

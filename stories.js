@@ -11,6 +11,10 @@
   var STORIES = [
     {
       id: 'beijing-trip',
+      quiz: [
+        { q: '大卫怎么去北京？', en: 'How does David go to Beijing?', options: ['坐飞机', '坐火车', '骑自行车'], answer: 0 },
+        { q: '他在饭店喝什么？', en: 'What does he drink at the restaurant?', options: ['咖啡', '中国茶', '水'], answer: 1 }
+      ],
       title: '第一次去北京',
       englishTitle: 'First Trip to Beijing',
       level: 'HSK 1',
@@ -45,6 +49,10 @@
     },
     {
       id: 'my-cat',
+      quiz: [
+        { q: '咪咪是什么颜色的？', en: 'What color is Mimi?', options: ['黑色的', '白色的', '黄色的'], answer: 1 },
+        { q: '咪咪最喜欢吃什么？', en: 'What does Mimi like eating most?', options: ['新鲜的鱼', '米饭', '水果'], answer: 0 }
+      ],
       title: '我的小猫咪咪',
       englishTitle: 'My Cat Mimi',
       level: 'HSK 1',
@@ -79,6 +87,10 @@
     },
     {
       id: 'coffee-shop',
+      quiz: [
+        { q: '谁在咖啡馆等朋友？', en: 'Who is waiting at the coffee shop?', options: ['大卫', '王老师', '服务员'], answer: 1 },
+        { q: '外面天气怎么样？', en: 'How is the weather outside?', options: ['下雨很冷', '晴天很热', '下雪'], answer: 0 }
+      ],
       title: '在咖啡馆见面',
       englishTitle: 'Meeting at the Coffee Shop',
       level: 'HSK 2',
@@ -113,6 +125,10 @@
     },
     {
       id: 'weekend-sports',
+      quiz: [
+        { q: '今天星期几？', en: 'What day is it today?', options: ['星期日', '星期六', '星期一'], answer: 1 },
+        { q: '操场上的同学在打什么？', en: 'What are classmates playing?', options: ['篮球', '乒乓球', '棒球'], answer: 0 }
+      ],
       title: '周末的运动时光',
       englishTitle: 'Weekend Sports Time',
       level: 'HSK 2',

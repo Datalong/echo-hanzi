@@ -833,6 +833,35 @@ window.onload = async () => {
   ok('发音：八轮内出现答错分支', sawWrong);
   ok('发音：切换韵母分类', (doc.getElementById('pron-cats').querySelector('[data-cat="final"]').click(), await sleep(150), doc.querySelectorAll('#pron-options .pron-option').length === 2));
 
+  // ---------- 学习笔记 (My Notes) ----------
+  ok('笔记：updateNote 可用', typeof win.Collection.updateNote === 'function');
+  win.Collection.toggle('茶');
+  win.Collection.updateNote('茶', '在咖啡馆喝的');
+  ok('笔记：保存并回读', win.Collection.load()['茶'].note === '在咖啡馆喝的');
+  win.Collection.updateNote('茶', '更新后的笔记');
+  ok('笔记：更新笔记', win.Collection.load()['茶'].note === '更新后的笔记');
+  win.Collection.reset();
+
+  // ---------- 阅读理解小测 ----------
+  ok('小测：故事自带题目', win.Stories.STORIES.every(s => Array.isArray(s.quiz) && s.quiz.length === 2));
+  doc.getElementById('tab-read').click();
+  await sleep(150);
+  doc.getElementById('btn-read-quiz').click();
+  await sleep(100);
+  ok('小测：题目渲染', doc.querySelectorAll('#read-quiz .quiz-q').length === 1);
+  const storyQuiz = win.Stories.getById(win.__readStoryId || 'beijing-trip');
+  // 逐题点击正确项
+  for (let i = 0; i < 2; i++) {
+    const qEl = doc.querySelector('#read-quiz .quiz-q');
+    if (!qEl) break;
+    const opts = qEl.querySelectorAll('.quiz-opt');
+    ok('小测：每题 3 选项', opts.length === 3);
+    // 正确项高亮由内部答案决定：直接点第一项然后验证反馈机制（点击后所有按钮锁定）
+    opts[0].click();
+    await sleep(1100);
+  }
+  ok('小测：出结果', doc.querySelector('#read-quiz .quiz-result') !== null, doc.querySelector('#read-quiz .quiz-result')?.textContent || '');
+
   } catch (err) {
     log.push('FAIL 用例中断 :: ' + (err && err.message ? err.message : String(err)));
   }

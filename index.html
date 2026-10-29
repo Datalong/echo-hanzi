@@ -189,7 +189,7 @@
       </section>
 
       <section class="panel home-panel home-panel-wide">
-        <div class="panel-head"><h3 class="panel-title">生词收藏</h3><span class="panel-sub" id="home-fav-sub">点击微词典里的 ☆ 收藏，自动进入复习流</span></div>
+        <div class="panel-head"><h3 class="panel-title">生词收藏</h3><span class="panel-sub"><span id="home-fav-sub">点击微词典里的 ☆ 收藏，自动进入复习流</span> · <button class="ghost-btn fav-export" id="btn-fav-export" type="button">导出笔记</button></span></div>
         <div class="home-fav" id="home-fav"></div>
       </section>
 
@@ -257,11 +257,13 @@
   <section class="screen read-screen" id="screen-read" hidden>
     <div class="read-header">
       <h2 class="read-title" id="read-story-title">第一次去北京</h2>
+      <button class="ghost-btn" id="btn-read-quiz" type="button" title="读完测一测">📝 小测</button>
       <span class="read-intro" id="read-story-intro">First Trip to Beijing</span>
     </div>
 
     <div class="card read-card">
       <div class="read-article" id="read-article"></div>
+      <div class="read-quiz" id="read-quiz" hidden></div>
     </div>
   </section>
 
@@ -393,6 +395,7 @@
           <div class="dict-colloc-title">常用搭配</div>
           <div class="dict-colloc-list" id="dt-collocs"></div>
         </div>
+        <input class="listen-input dict-note" id="dt-note" type="text" placeholder="写点笔记..." maxlength="60" />
       </div>
     </section>
 

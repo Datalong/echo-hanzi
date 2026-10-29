@@ -46,6 +46,7 @@
     dtCollocs: $('dt-collocs'),
     dtBtnSpeak: $('dt-btn-speak'),
     dtBtnFav: $('dt-btn-fav'),
+    dtNote: $('dt-note'),
     dtBtnStroke: $('dt-btn-stroke'),
     tones: $('tg-tones'),
     ime: $('tg-ime'),
@@ -80,6 +81,8 @@
     pronPlay: $('btn-pron-play'),
     pronNext: $('btn-pron-next'),
     pronCats: $('pron-cats'),
+    btnReadQuiz: $('btn-read-quiz'),
+    readQuiz: $('read-quiz'),
     reviewList: $('review-list'),
     reviewSummary: $('review-summary'),
     btnReviewStart: $('btn-review-start'),
@@ -103,6 +106,7 @@
     homeRecent: $('home-recent'),
     homeFav: $('home-fav'),
     homeFavSub: $('home-fav-sub'),
+    btnFavExport: $('btn-fav-export'),
     selGoal: $('sel-goal'),
     todayCount: $('today-count'),
     todayFill: $('today-fill'),
@@ -806,6 +810,79 @@
     startSession();
   }
 
+  /** 导出收藏 + 笔记为文本文件 */
+  function exportFavorites() {
+    if (!window.Collection) return;
+    var db = window.Collection.load();
+    var chars = window.Collection.recent(2000);
+    if (!chars.length) {
+      flash(t('homeFavEmpty'), 'bad');
+      return;
+    }
+    var lines = chars.map(function (ch) {
+      var rec = db[ch] || {};
+      return [ch, rec.pinyin || '', rec.english || '', rec.note || '']
+        .filter(Boolean).join('  ');
+    });
+    var blob = new Blob(['Echo Hanzi 收藏笔记\n\n' + lines.join('\n') + '\n'],
+      { type: 'text/plain;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'echo-hanzi-notes-' + new Date().toISOString().slice(0, 10) + '.txt';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 500);
+  }
+
+  /* ---------------- 📖 阅读理解小测 ---------------- */
+
+  function renderReadQuiz() {
+    if (!window.Stories || !els.readQuiz) return;
+    var story = window.Stories.getById(state.readStoryId);
+    var quiz = story.quiz || [];
+    els.readQuiz.hidden = quiz.length === 0;
+    els.readQuiz.textContent = '';
+    if (!quiz.length) return;
+
+    els.readQuiz.appendChild(span('quiz-title', t('quizTitle') + ' · ' + story.title));
+    var qi = 0;
+    var okCount = 0;
+
+    function showQuestion() {
+      els.readQuiz.querySelectorAll('.quiz-q').forEach(function (el) { el.remove(); });
+      if (qi >= quiz.length) {
+        els.readQuiz.appendChild(span('quiz-result',
+          t('quizResult').replace('{ok}', okCount).replace('{total}', quiz.length)));
+        return;
+      }
+      var cur = quiz[qi];
+      var box = document.createElement('div');
+      box.className = 'quiz-q';
+      box.appendChild(span('quiz-q-text', (qi + 1) + '. ' + cur.q + '  (' + cur.en + ')'));
+      cur.options.forEach(function (opt, oi) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'quiz-opt';
+        btn.textContent = opt;
+        btn.addEventListener('click', function () {
+          if (box.dataset.done) return;
+          box.dataset.done = '1';
+          if (oi === cur.answer) {
+            okCount++;
+            btn.classList.add('is-right');
+          } else {
+            btn.classList.add('is-wrong');
+            box.querySelectorAll('.quiz-opt')[cur.answer].classList.add('is-right');
+          }
+          qi++;
+          setTimeout(showQuestion, 900);
+        });
+        box.appendChild(btn);
+      });
+      els.readQuiz.appendChild(box);
+    }
+    showQuestion();
+  }
+
   /* ---------------- 🔊 发音听辨 (Pronunciation) ---------------- */
 
   var pronCat = 'tone';
@@ -1235,6 +1312,10 @@
       els.dtBtnFav.title = saved ? t('dictFavOn') : t('dictFav');
     }
 
+    if (els.dtNote) {
+      els.dtNote.placeholder = t('dictNotePh');
+      els.dtNote.value = (window.Collection && window.Collection.load()[info.char] || {}).note || '';
+    }
     els.dtCollocs.textContent = '';
     (info.collocations || []).forEach(function (c) {
       var tag = span('dict-colloc-tag', c);
@@ -2666,6 +2747,14 @@
 
     if (els.btnShowStroke) els.btnShowStroke.addEventListener('click', function () { openStrokeModal(); });
 
+    if (els.dtNote) {
+      els.dtNote.addEventListener('change', function () {
+        if (window.Collection && state.dictChar) {
+          window.Collection.updateNote(state.dictChar, els.dtNote.value.trim());
+          flash(t('msgNoteSaved'), 'good');
+        }
+      });
+    }
     if (els.dtBtnFav) {
       els.dtBtnFav.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -2763,6 +2852,13 @@
 
     if (els.btnReviewStart) {
       els.btnReviewStart.addEventListener('click', startReviewSession);
+    }
+
+    if (els.btnFavExport) {
+      els.btnFavExport.addEventListener('click', exportFavorites);
+    }
+    if (els.btnReadQuiz) {
+      els.btnReadQuiz.addEventListener('click', renderReadQuiz);
     }
 
     // 发音听辨绑定

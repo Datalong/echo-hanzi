@@ -2401,3 +2401,66 @@ kbd {
 
 .pron-feedback.is-good { color: var(--accent); }
 .pron-feedback.is-bad { color: var(--danger, #e05b5b); }
+
+/* ---------------- 📝 学习笔记 & 阅读小测 ---------------- */
+
+.dict-note {
+  width: 100%;
+  margin-top: 10px;
+  font-size: 13px;
+  padding: 8px 10px;
+}
+
+.fav-export {
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
+.quiz-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.quiz-q {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.quiz-q-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.quiz-opt {
+  appearance: none;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  color: var(--text);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.quiz-opt:hover { border-color: var(--accent-2); }
+.quiz-opt.is-right {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.quiz-opt.is-wrong {
+  border-color: var(--danger, #e05b5b);
+}
+
+.quiz-result {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+}
