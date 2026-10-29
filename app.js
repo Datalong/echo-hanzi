@@ -72,6 +72,14 @@
     screenHome: $('screen-home'),
     screenTutor: $('screen-tutor'),
     screenReview: $('screen-review'),
+    screenPron: $('screen-pron'),
+    pronOptions: $('pron-options'),
+    pronScore: $('pron-score'),
+    pronQuestion: $('pron-question'),
+    pronFeedback: $('pron-feedback'),
+    pronPlay: $('btn-pron-play'),
+    pronNext: $('btn-pron-next'),
+    pronCats: $('pron-cats'),
     reviewList: $('review-list'),
     reviewSummary: $('review-summary'),
     btnReviewStart: $('btn-review-start'),
@@ -267,6 +275,7 @@
     q('tab-home', t('navHome'));
     q('tab-tutor', t('navTutor'));
     q('tab-review', t('navReview'));
+    q('tab-pron', t('navPron'));
     q('tab-write', t('navWrite'));
     q('tab-speak', t('navSpeak'));
     q('tab-listen', t('navListen'));
@@ -505,6 +514,7 @@
     els.screenHome.hidden = (hub !== 'home');
     els.screenTutor.hidden = (hub !== 'tutor');
     els.screenReview.hidden = (hub !== 'review');
+    els.screenPron.hidden = (hub !== 'pron');
     els.screenSpeak.hidden = (hub !== 'speak');
     els.screenListen.hidden = (hub !== 'listen');
     els.screenRead.hidden = (hub !== 'read');
@@ -519,6 +529,8 @@
       renderHomeScreen();
     } else if (hub === 'review') {
       renderReviewScreen();
+    } else if (hub === 'pron') {
+      renderPronScreen();
     } else if (hub === 'tutor') {
       renderTutorScreen();
     } else if (hub === 'write') {
@@ -792,6 +804,92 @@
     state.reviewOnly = true;
     switchHub('write');
     startSession();
+  }
+
+  /* ---------------- 🔊 发音听辨 (Pronunciation) ---------------- */
+
+  var pronCat = 'tone';
+  var pronRound = null;
+  var pronStats = { ok: 0, total: 0, streak: 0, locked: false };
+
+  function pronSpeak() {
+    if (pronRound && window.Speech) window.Speech.speak(pronRound.answer.hanzi, 0.78);
+  }
+
+  function renderPronScreen() {
+    if (!window.Pron || !els.pronOptions) return;
+    pronRound = window.Pron.nextRound(pronCat);
+    pronStats.locked = false;
+    if (els.pronQuestion) els.pronQuestion.textContent = t('pronQuestion');
+    if (els.pronFeedback) els.pronFeedback.hidden = true;
+    if (els.pronNext) els.pronNext.hidden = true;
+
+    els.pronOptions.textContent = '';
+    var opts = pronRound.options.slice();
+    // 打乱选项顺序
+    for (var i = opts.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = opts[i]; opts[i] = opts[j]; opts[j] = tmp;
+    }
+    opts.forEach(function (opt) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pron-option';
+      btn.innerHTML = '<span class="pron-opt-hz"></span><span class="pron-opt-py"></span>';
+      btn.querySelector('.pron-opt-hz').textContent = opt.hanzi;
+      btn.querySelector('.pron-opt-py').textContent = opt.pinyin;
+      btn.addEventListener('click', function () { pronPick(opt, btn); });
+      els.pronOptions.appendChild(btn);
+    });
+    updatePronScore();
+    pronSpeak();
+  }
+
+  function updatePronScore() {
+    if (els.pronScore) {
+      els.pronScore.textContent = t('pronMeta')
+        .replace('{ok}', pronStats.ok).replace('{total}', pronStats.total)
+        .replace('{streak}', pronStats.streak);
+    }
+  }
+
+  function pronPick(opt, btn) {
+    if (pronStats.locked || !pronRound) return;
+    pronStats.locked = true;
+    pronStats.total++;
+    var correct = opt.hanzi === pronRound.answer.hanzi;
+    if (correct) {
+      pronStats.ok++;
+      pronStats.streak++;
+    } else {
+      pronStats.streak = 0;
+      // 错误写回音节桶，与弱项专项联动
+      if (window.Stats && statsDb) {
+        window.Stats.recordSyllables(statsDb, [{
+          letters: pronRound.answer.letters,
+          tone: pronRound.answer.tone,
+          hadError: true
+        }]);
+        window.Stats.save(statsDb);
+      }
+    }
+
+    // 选项高亮
+    Array.prototype.forEach.call(els.pronOptions.children, function (el) {
+      var hz = el.querySelector('.pron-opt-hz').textContent;
+      if (hz === pronRound.answer.hanzi) el.classList.add('is-right');
+      else if (el === btn) el.classList.add('is-wrong');
+    });
+
+    if (els.pronFeedback) {
+      els.pronFeedback.hidden = false;
+      els.pronFeedback.className = 'pron-feedback ' + (correct ? 'is-good' : 'is-bad');
+      els.pronFeedback.textContent = correct
+        ? t('pronRight')
+        : t('pronWrong') + ' ' + pronRound.answer.hanzi + ' (' + pronRound.answer.pinyin + ')';
+    }
+    if (els.pronNext) els.pronNext.hidden = false;
+    updatePronScore();
   }
 
   /* ---------------- 🤖 AI 助教 (Tutor) ---------------- */
@@ -2666,6 +2764,21 @@
     if (els.btnReviewStart) {
       els.btnReviewStart.addEventListener('click', startReviewSession);
     }
+
+    // 发音听辨绑定
+    if (els.pronCats) {
+      els.pronCats.querySelectorAll('.tutor-chip').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          pronCat = chip.dataset.cat;
+          els.pronCats.querySelectorAll('.tutor-chip').forEach(function (c) {
+            c.classList.toggle('is-active', c === chip);
+          });
+          renderPronScreen();
+        });
+      });
+    }
+    if (els.pronPlay) els.pronPlay.addEventListener('click', pronSpeak);
+    if (els.pronNext) els.pronNext.addEventListener('click', renderPronScreen);
 
     // Tutor 绑定
     if (els.btnTutorSend) {

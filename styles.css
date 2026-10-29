@@ -2297,3 +2297,107 @@ kbd {
   color: var(--warn, #e0b352);
   white-space: nowrap;
 }
+
+/* ---------------- 🔊 发音听辨 (Pronunciation) ---------------- */
+
+.pron-screen {
+  gap: 16px;
+  justify-content: flex-start;
+  padding-top: 20px;
+}
+
+.pron-cats {
+  display: flex;
+  gap: 8px;
+}
+
+.pron-cats .tutor-chip.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pron-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 20px;
+}
+
+.pron-play {
+  appearance: none;
+  font: inherit;
+  font-size: 30px;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--bg-soft);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.pron-play:hover { transform: scale(1.06); background: var(--panel); }
+.pron-play:active { transform: scale(0.96); }
+
+.pron-question {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.pron-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pron-option {
+  appearance: none;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 110px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--bg-soft);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.pron-option:hover { border-color: var(--accent-2); transform: translateY(-2px); }
+
+.pron-opt-hz {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pron-opt-py { font-size: 13px; color: var(--muted); }
+
+.pron-option.is-right {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.pron-option.is-wrong {
+  border-color: var(--danger, #e05b5b);
+  animation: pronShake 0.3s ease;
+}
+
+@keyframes pronShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.pron-feedback {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pron-feedback.is-good { color: var(--accent); }
+.pron-feedback.is-bad { color: var(--danger, #e05b5b); }

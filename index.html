@@ -31,6 +31,7 @@
       <button class="hub-tab" id="tab-listen" type="button" data-hub="listen">🎧 听力</button>
       <button class="hub-tab" id="tab-read" type="button" data-hub="read">📖 阅读</button>
       <button class="hub-tab" id="tab-review" type="button" data-hub="review">📋 复习</button>
+      <button class="hub-tab" id="tab-pron" type="button" data-hub="pron">🔊 发音</button>
       <button class="hub-tab" id="tab-tutor" type="button" data-hub="tutor">🤖 助教</button>
     </nav>
 
@@ -297,6 +298,26 @@
     </div>
     <div class="card review-card">
       <div class="review-list" id="review-list"></div>
+    </div>
+  </section>
+
+  <!-- 🔊 发音听辨 (Pronunciation) -->
+  <section class="screen pron-screen" id="screen-pron" hidden>
+    <div class="speak-header">
+      <div class="pron-cats" id="pron-cats">
+        <button class="tutor-chip is-active" type="button" data-cat="tone">四声对比</button>
+        <button class="tutor-chip" type="button" data-cat="initial">声母对立</button>
+        <button class="tutor-chip" type="button" data-cat="final">韵母对立</button>
+      </div>
+      <span class="runline" id="pron-score">0 / 0 · 连对 0</span>
+    </div>
+
+    <div class="card pron-card">
+      <button class="pron-play" id="btn-pron-play" type="button" title="再听一遍 (R)">🔊</button>
+      <div class="pron-question" id="pron-question">你听到的是哪个？</div>
+      <div class="pron-options" id="pron-options"></div>
+      <div class="pron-feedback" id="pron-feedback" hidden></div>
+      <button class="ghost-btn" id="btn-pron-next" type="button" hidden>下一题 (Tab)</button>
     </div>
   </section>
 
@@ -597,6 +618,7 @@
 <script src="dict.js"></script>
 <script src="collection.js"></script>
 <script src="tutor.js"></script>
+<script src="pron.js"></script>
 <script src="stories.js"></script>
 <script src="ime.js"></script>
 <script src="custom.js"></script>

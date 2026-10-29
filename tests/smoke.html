@@ -581,7 +581,7 @@ window.onload = async () => {
   ok('海报：Esc 关闭海报浮层', doc.getElementById('share-modal').hidden);
 
   // ---------- 四大中心全局架构 (Listen / Speak / Read / Write) ----------
-  ok('六大中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 7);
+  ok('六大中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 8);
   ok('总览：默认落在学习总览', !doc.getElementById('screen-home').hidden);
   ok('总览：记忆状态四档渲染', doc.getElementById('home-srs').children.length === 4);
   ok('总览：四张学习中心卡片', doc.getElementById('home-cards').querySelectorAll('.home-card').length === 4);
@@ -730,7 +730,7 @@ window.onload = async () => {
   await sleep(150);
   ok('助教：进入助教中心', !doc.getElementById('screen-tutor').hidden && doc.getElementById('screen-typing').hidden);
   ok('助教：欢迎语渲染', doc.getElementById('tutor-messages').textContent.length > 0);
-  ok('助教：快捷提问 chips', doc.querySelectorAll('.tutor-chip').length === 3);
+  ok('助教：快捷提问 chips', doc.querySelectorAll('#tutor-chips .tutor-chip').length === 3);
 
   // 设置弹窗开/存
   doc.getElementById('btn-tutor-settings').click();
@@ -798,6 +798,40 @@ window.onload = async () => {
   ok('复习：首题带复习角标', doc.getElementById('card-badge').textContent.length > 0);
   ok('复习：角标为「复习」', doc.getElementById('card-badge').textContent === '复习' || doc.getElementById('card-badge').textContent === 'Review', doc.getElementById('card-badge').textContent);
   win.Srs.reset();
+
+  // ---------- 发音听辨 (Pronunciation) ----------
+  ok('发音：Pron 模块可用', typeof win.Pron === 'object' && typeof win.Pron.nextRound === 'function');
+  const toneRound = win.Pron.nextRound('tone');
+  ok('发音：四声题 4 选项', toneRound.options.length === 4 && toneRound.answer.tone >= 1 && toneRound.answer.tone <= 4);
+  const pairRound = win.Pron.nextRound('initial');
+  ok('发音：声母题 2 选项', pairRound.options.length === 2 && pairRound.answer.letters.length > 0, pairRound.answer.letters);
+  const finRound = win.Pron.nextRound('final');
+  ok('发音：韵母题选项不重复', finRound.options[0].hanzi !== finRound.options[1].hanzi);
+
+  doc.getElementById('tab-pron').click();
+  await sleep(200);
+  ok('发音：进入发音中心', !doc.getElementById('screen-pron').hidden);
+  ok('发音：选项按钮渲染', doc.querySelectorAll('#pron-options .pron-option').length >= 2);
+  // 循环作答直到出现一次答错（最多 8 轮），验证错误写入声调统计
+  let sawWrong = false;
+  for (let i = 0; i < 8 && !sawWrong; i++) {
+    const tones0 = win.Stats.load().tones;
+    const err0 = Object.values(tones0).reduce((s, r) => s + r.e, 0);
+    doc.querySelector('#pron-options .pron-option').click();
+    await sleep(60);
+    const good = doc.getElementById('pron-feedback').classList.contains('is-good');
+    if (!good) {
+      sawWrong = true;
+      const err1 = Object.values(win.Stats.load().tones).reduce((s, r) => s + r.e, 0);
+      ok('发音：错题写入声调统计', err1 > err0, err0 + '->' + err1);
+    }
+    doc.getElementById('btn-pron-next').click();
+    await sleep(80);
+  }
+  ok('发音：反馈与下一题可用', !doc.getElementById('pron-feedback').hidden || pronStatsDone(sawWrong));
+  function pronStatsDone(w) { return w; }
+  ok('发音：八轮内出现答错分支', sawWrong);
+  ok('发音：切换韵母分类', (doc.getElementById('pron-cats').querySelector('[data-cat="final"]').click(), await sleep(150), doc.querySelectorAll('#pron-options .pron-option').length === 2));
 
   } catch (err) {
     log.push('FAIL 用例中断 :: ' + (err && err.message ? err.message : String(err)));
