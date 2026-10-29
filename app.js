@@ -68,6 +68,15 @@
     voiceWave: $('voice-wave'),
     rsDue: $('rs-due'),
     stats: $('screen-stats'),
+    screenHome: $('screen-home'),
+    homeStreak: $('home-streak'),
+    homeDue: $('home-due'),
+    homeSrs: $('home-srs'),
+    homeWeak: $('home-weak'),
+    homeRecent: $('home-recent'),
+    homeCards: $('home-cards'),
+    btnHomeStart: $('btn-home-start'),
+    btnHomeDash: $('btn-home-dash'),
     dashSummary: $('dash-summary'),
     dashTrend: $('dash-trend'),
     dashTrendSub: $('dash-trend-sub'),
@@ -196,7 +205,7 @@
     dictTimer: null,
     dictChar: '',
     shareCanvas: null,
-    currentHub: 'write',
+    currentHub: 'home',
     speakIndex: 0,
     listenIndex: 0,
     readStoryId: 'beijing-trip'
@@ -227,6 +236,7 @@
 
     var q = function(id, text) { var el = $(id); if (el) el.textContent = text; };
 
+    q('tab-home', t('navHome'));
     q('tab-write', t('navWrite'));
     q('tab-speak', t('navSpeak'));
     q('tab-listen', t('navListen'));
@@ -320,6 +330,7 @@
       }
     }
     if (state.statsOpen) renderDashboard();
+    if (state.currentHub === 'home') renderHomeScreen();
   }
 
   /* ---------------- 设置 ---------------- */
@@ -461,6 +472,7 @@
     });
 
     els.typing.hidden = (hub !== 'write');
+    els.screenHome.hidden = (hub !== 'home');
     els.screenSpeak.hidden = (hub !== 'speak');
     els.screenListen.hidden = (hub !== 'listen');
     els.screenRead.hidden = (hub !== 'read');
@@ -471,7 +483,9 @@
     els.result.hidden = true;
     if (els.stats) els.stats.hidden = true;
 
-    if (hub === 'write') {
+    if (hub === 'home') {
+      renderHomeScreen();
+    } else if (hub === 'write') {
       focusCatcher();
     } else if (hub === 'speak') {
       renderSpeakScreen();
@@ -479,6 +493,108 @@
       renderListenScreen();
     } else if (hub === 'read') {
       renderReadScreen();
+    }
+  }
+
+  /* ---------------- 🏠 学习总览 (Home) ---------------- */
+
+  /** 连续练习天数：从最近一次向前数连续有练习的自然日 */
+  function calcStreak() {
+    if (!statsDb || !statsDb.sessions.length) return 0;
+    var days = {};
+    statsDb.sessions.forEach(function (s) {
+      if (s.t) days[new Date(s.t).toDateString()] = true;
+    });
+    var streak = 0;
+    var cursor = new Date();
+    // 今天没练也不断链，从昨天起算
+    if (!days[cursor.toDateString()]) cursor.setDate(cursor.getDate() - 1);
+    while (days[cursor.toDateString()]) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+  }
+
+  function renderHomeScreen() {
+    // 刷新本地缓存，拿到最新练习/SRS 数据
+    if (window.Stats) statsDb = window.Stats.load();
+    if (window.Srs) srsDb = window.Srs.load();
+
+    var sum = window.Stats ? window.Stats.summary(statsDb) : { sessions: 0, avgCpm: 0, avgAcc: 0 };
+
+    // 待复习数：全词库 + 句库 + 自定义
+    var pool = (window.WORD_LISTS.all || []).slice();
+    if (window.SENTENCE_LISTS) pool = pool.concat(window.SENTENCE_LISTS.all || []);
+    if (window.Custom) {
+      window.Custom.load().forEach(function (entry) {
+        pool = pool.concat(window.Custom.toItems(entry));
+      });
+    }
+    var dueCount = window.Srs ? window.Srs.dueItems(srsDb, pool).length : 0;
+
+    if (els.homeStreak) els.homeStreak.textContent = String(calcStreak());
+    if (els.homeDue) els.homeDue.textContent = String(dueCount);
+
+    // 记忆状态四档
+    if (els.homeSrs) {
+      var m = masteryBuckets();
+      els.homeSrs.textContent = '';
+      [
+        ['srs-fresh', m.fresh, t('homeFresh')],
+        ['srs-learning', m.learning, t('homeLearning')],
+        ['srs-solid', m.solid, t('homeSolid')],
+        ['srs-mastered', m.mastered, t('homeMastered')]
+      ].forEach(function (pair) {
+        var box = document.createElement('div');
+        box.className = 'srs-cell ' + pair[0];
+        box.appendChild(span('srs-cell-v', String(pair[1])));
+        box.appendChild(span('srs-cell-k', pair[2]));
+        els.homeSrs.appendChild(box);
+      });
+    }
+
+    // 今日弱项
+    if (els.homeWeak) {
+      els.homeWeak.textContent = '';
+      var tips = buildSuggestions(3);
+      if (!tips.length) {
+        els.homeWeak.appendChild(span('panel-empty', t('homeWeakEmpty')));
+      } else {
+        tips.forEach(function (tip) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'drill-btn home-drill';
+          btn.appendChild(span('drill-label', tip.label));
+          btn.appendChild(span('drill-meta', '错误率 ' + Math.round(tip.rate * 100) + '%'));
+          btn.addEventListener('click', function () {
+            switchHub('write');
+            startDrill(tip);
+          });
+          els.homeWeak.appendChild(btn);
+        });
+      }
+    }
+
+    // 最近练习
+    if (els.homeRecent) {
+      els.homeRecent.textContent = '';
+      var recent = (statsDb && statsDb.sessions ? statsDb.sessions.slice(-5) : []).reverse();
+      if (!recent.length) {
+        els.homeRecent.appendChild(span('panel-empty', t('homeRecentEmpty')));
+      } else {
+        recent.forEach(function (s) {
+          var row = document.createElement('div');
+          row.className = 'recent-row';
+          var d = s.t ? new Date(s.t) : null;
+          row.appendChild(span('recent-when', d ?
+            (d.getMonth() + 1) + '/' + d.getDate() + ' ' +
+            ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) : '–'));
+          row.appendChild(span('recent-meta',
+            (s.cpm || 0) + ' CPM · ' + (s.acc || 0) + '% · ' + (s.items || 0) + ' ' + t('unitWord')));
+          els.homeRecent.appendChild(row);
+        });
+      }
     }
   }
 
@@ -2157,6 +2273,25 @@
       });
     });
 
+    // 总览页跳转绑定
+    if (els.homeCards) {
+      els.homeCards.querySelectorAll('.home-card').forEach(function (card) {
+        card.addEventListener('click', function () {
+          switchHub(card.dataset.goto);
+        });
+      });
+    }
+    if (els.btnHomeStart) {
+      els.btnHomeStart.addEventListener('click', function () { switchHub('write'); });
+    }
+    if (els.btnHomeDash) {
+      els.btnHomeDash.addEventListener('click', function () {
+        state.statsOpen = true;
+        renderDashboard();
+        els.stats.hidden = false;
+      });
+    }
+
     // Speak 绑定
     if (els.btnSpkListen) {
       els.btnSpkListen.addEventListener('click', function () {
@@ -2406,6 +2541,7 @@
     }
     if (!window.SENTENCE_LISTS) settings.mode = 'word';
     startSession();
+    switchHub('home');
     setTimeout(focusCatcher, 60);
     document.documentElement.setAttribute('data-app-ready', '1');
     registerServiceWorker();

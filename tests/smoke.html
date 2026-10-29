@@ -581,7 +581,16 @@ window.onload = async () => {
   ok('海报：Esc 关闭海报浮层', doc.getElementById('share-modal').hidden);
 
   // ---------- 四大中心全局架构 (Listen / Speak / Read / Write) ----------
-  ok('四大中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 4);
+  ok('五大中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 5);
+  ok('总览：默认落在学习总览', !doc.getElementById('screen-home').hidden);
+  ok('总览：记忆状态四档渲染', doc.getElementById('home-srs').children.length === 4);
+  ok('总览：四张学习中心卡片', doc.getElementById('home-cards').querySelectorAll('.home-card').length === 4);
+  doc.getElementById('btn-home-start').click();
+  await sleep(150);
+  ok('总览：一键开始进入打字', !doc.getElementById('screen-typing').hidden && doc.getElementById('screen-home').hidden);
+  doc.getElementById('tab-home').click();
+  await sleep(150);
+  ok('总览：切回总览页', !doc.getElementById('screen-home').hidden && doc.getElementById('screen-typing').hidden);
   ok('四大中心：SpeechRec 模块可用', typeof win.SpeechRec === 'object' && typeof win.SpeechRec.evaluatePronunciation === 'function');
 
   // 1. 切换到 Speak 口语跟读中心

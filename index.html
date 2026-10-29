@@ -25,7 +25,8 @@
 
     <!-- 四大核心中心全局导航 -->
     <nav class="hub-nav" id="hub-nav">
-      <button class="hub-tab is-active" id="tab-write" type="button" data-hub="write">⌨️ 打字</button>
+      <button class="hub-tab is-active" id="tab-home" type="button" data-hub="home">🏠 总览</button>
+      <button class="hub-tab" id="tab-write" type="button" data-hub="write">⌨️ 打字</button>
       <button class="hub-tab" id="tab-speak" type="button" data-hub="speak">🎙️ 跟读</button>
       <button class="hub-tab" id="tab-listen" type="button" data-hub="listen">🎧 听力</button>
       <button class="hub-tab" id="tab-read" type="button" data-hub="read">📖 阅读</button>
@@ -90,6 +91,69 @@
       <button class="toggle iconly" id="tg-theme" type="button" title="切换主题">◐</button>
     </div>
   </header>
+
+  <!-- 🏠 学习总览 (Home) -->
+  <section class="screen home-screen" id="screen-home" hidden>
+    <div class="home-hero">
+      <div class="home-greet">
+        <h2 class="home-title" id="home-title">欢迎回来</h2>
+        <p class="home-sub" id="home-sub">今天也来练一会儿中文吧</p>
+      </div>
+      <div class="home-hero-stats">
+        <div class="home-pill">
+          <span class="home-pill-v" id="home-streak">0</span>
+          <span class="home-pill-k">连续练习天数</span>
+        </div>
+        <div class="home-pill home-pill-due">
+          <span class="home-pill-v" id="home-due">0</span>
+          <span class="home-pill-k">今日待复习</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="home-cta-row">
+      <button class="primary-btn home-start" id="btn-home-start" type="button">开始打字练习 →</button>
+      <button class="ghost-btn" id="btn-home-dash" type="button">数据看板</button>
+    </div>
+
+    <div class="home-cards" id="home-cards">
+      <button class="home-card" type="button" data-goto="write">
+        <span class="home-card-icon">⌨️</span>
+        <span class="home-card-name">打字</span>
+        <span class="home-card-desc">拼音输入 · 声调 · 听音</span>
+      </button>
+      <button class="home-card" type="button" data-goto="speak">
+        <span class="home-card-icon">🎙️</span>
+        <span class="home-card-name">跟读</span>
+        <span class="home-card-desc">开口说 · 发音评分</span>
+      </button>
+      <button class="home-card" type="button" data-goto="listen">
+        <span class="home-card-icon">🎧</span>
+        <span class="home-card-name">听力</span>
+        <span class="home-card-desc">磨耳朵 · 听写校对</span>
+      </button>
+      <button class="home-card" type="button" data-goto="read">
+        <span class="home-card-icon">📖</span>
+        <span class="home-card-name">阅读</span>
+        <span class="home-card-desc">沉浸故事 · 微词典</span>
+      </button>
+    </div>
+
+    <div class="home-panels">
+      <section class="panel home-panel">
+        <div class="panel-head"><h3 class="panel-title">记忆状态</h3><span class="panel-sub">间隔重复排期</span></div>
+        <div class="home-srs" id="home-srs"></div>
+      </section>
+      <section class="panel home-panel">
+        <div class="panel-head"><h3 class="panel-title">今日弱项</h3><span class="panel-sub">按错误率排序</span></div>
+        <div class="home-weak" id="home-weak"></div>
+      </section>
+      <section class="panel home-panel home-panel-wide">
+        <div class="panel-head"><h3 class="panel-title">最近练习</h3><span class="panel-sub">最近 5 轮</span></div>
+        <div class="home-recent" id="home-recent"></div>
+      </section>
+    </div>
+  </section>
 
   <!-- 🎙️ 口语跟读中心 (Speak) -->
   <section class="screen speak-screen" id="screen-speak" hidden>
