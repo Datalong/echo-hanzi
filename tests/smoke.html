@@ -581,7 +581,7 @@ window.onload = async () => {
   ok('海报：Esc 关闭海报浮层', doc.getElementById('share-modal').hidden);
 
   // ---------- 四大中心全局架构 (Listen / Speak / Read / Write) ----------
-  ok('五大中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 5);
+  ok('五大中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 6);
   ok('总览：默认落在学习总览', !doc.getElementById('screen-home').hidden);
   ok('总览：记忆状态四档渲染', doc.getElementById('home-srs').children.length === 4);
   ok('总览：四张学习中心卡片', doc.getElementById('home-cards').querySelectorAll('.home-card').length === 4);
@@ -719,6 +719,50 @@ window.onload = async () => {
   const dueNow = Object.keys(srsDbNow).filter(k => srsDbNow[k].due && srsDbNow[k].due <= Date.now());
   ok('收藏：新收藏自动进入 SRS 到期队列', dueNow.length > 0, dueNow.join(','));
   win.Collection.reset();
+
+  // ---------- AI 助教 (Tutor) ----------
+  ok('助教：Tutor 模块可用', typeof win.Tutor === 'object' && typeof win.Tutor.chat === 'function');
+  const ctx = win.Tutor.buildContext();
+  ok('助教：学习上下文构建', typeof ctx === 'string' && ctx.length > 0, ctx.slice(0, 40));
+  ok('助教：设置默认值', win.Tutor.loadSettings().baseUrl === 'https://api.openai.com/v1');
+
+  doc.getElementById('tab-tutor').click();
+  await sleep(150);
+  ok('助教：进入助教中心', !doc.getElementById('screen-tutor').hidden && doc.getElementById('screen-typing').hidden);
+  ok('助教：欢迎语渲染', doc.getElementById('tutor-messages').textContent.length > 0);
+  ok('助教：快捷提问 chips', doc.querySelectorAll('.tutor-chip').length === 3);
+
+  // 设置弹窗开/存
+  doc.getElementById('btn-tutor-settings').click();
+  await sleep(100);
+  ok('助教：设置弹窗打开', !doc.getElementById('tutor-modal').hidden);
+  doc.getElementById('tutor-key').value = 'sk-test';
+  doc.getElementById('btn-tutor-save').click();
+  await sleep(100);
+  ok('助教：设置保存', win.Tutor.loadSettings().apiKey === 'sk-test' && doc.getElementById('tutor-modal').hidden);
+
+  // mock 流式 fetch：验证 SSE 解析与历史落盘
+  const realFetch = win.fetch;
+  win.fetch = function (url, opts) {
+    const body = JSON.parse(opts.body);
+    const enc = new TextEncoder();
+    const sse = 'data: ' + JSON.stringify({ choices: [{ delta: { content: '你' } }] }) + '\n'
+      + 'data: ' + JSON.stringify({ choices: [{ delta: { content: '好' } }] }) + '\n'
+      + 'data: [DONE]\n';
+    const stream = new ReadableStream({
+      start(c) { c.enqueue(enc.encode(sse)); c.close(); }
+    });
+    return Promise.resolve({ ok: true, body: stream, __model: body.model });
+  };
+  doc.getElementById('tutor-input').value = '你好';
+  doc.getElementById('btn-tutor-send').click();
+  await sleep(400);
+  win.fetch = realFetch;
+  const hist = win.Tutor.loadHistory();
+  ok('助教：流式回复完整拼接', hist.some(m => m.role === 'tutor' && m.content === '你好'), JSON.stringify(hist.slice(-1)));
+  ok('助教：用户消息入历史', hist.some(m => m.role === 'user' && m.content === '你好'));
+  win.Tutor.clearHistory();
+  win.Tutor.saveSettings({ apiKey: '' });
 
   } catch (err) {
     log.push('FAIL 用例中断 :: ' + (err && err.message ? err.message : String(err)));

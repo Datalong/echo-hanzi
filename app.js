@@ -70,6 +70,20 @@
     rsDue: $('rs-due'),
     stats: $('screen-stats'),
     screenHome: $('screen-home'),
+    screenTutor: $('screen-tutor'),
+    tutorMessages: $('tutor-messages'),
+    tutorChips: $('tutor-chips'),
+    tutorInput: $('tutor-input'),
+    tutorStatus: $('tutor-status'),
+    btnTutorSend: $('btn-tutor-send'),
+    btnTutorClear: $('btn-tutor-clear'),
+    btnTutorSettings: $('btn-tutor-settings'),
+    tutorModal: $('tutor-modal'),
+    btnTutorClose: $('btn-tutor-close'),
+    btnTutorSave: $('btn-tutor-save'),
+    tutorBaseUrl: $('tutor-baseurl'),
+    tutorKey: $('tutor-key'),
+    tutorModel: $('tutor-model'),
     homeStreak: $('home-streak'),
     homeDue: $('home-due'),
     homeSrs: $('home-srs'),
@@ -240,6 +254,7 @@
     var q = function(id, text) { var el = $(id); if (el) el.textContent = text; };
 
     q('tab-home', t('navHome'));
+    q('tab-tutor', t('navTutor'));
     q('tab-write', t('navWrite'));
     q('tab-speak', t('navSpeak'));
     q('tab-listen', t('navListen'));
@@ -476,6 +491,7 @@
 
     els.typing.hidden = (hub !== 'write');
     els.screenHome.hidden = (hub !== 'home');
+    els.screenTutor.hidden = (hub !== 'tutor');
     els.screenSpeak.hidden = (hub !== 'speak');
     els.screenListen.hidden = (hub !== 'listen');
     els.screenRead.hidden = (hub !== 'read');
@@ -488,6 +504,8 @@
 
     if (hub === 'home') {
       renderHomeScreen();
+    } else if (hub === 'tutor') {
+      renderTutorScreen();
     } else if (hub === 'write') {
       focusCatcher();
     } else if (hub === 'speak') {
@@ -622,6 +640,114 @@
         });
       }
     }
+  }
+
+  /* ---------------- 🤖 AI 助教 (Tutor) ---------------- */
+
+  var tutorBusy = false;
+
+  function tutorMsgRow(role, text) {
+    var row = document.createElement('div');
+    row.className = 'tutor-msg tutor-msg-' + role;
+    var bubble = document.createElement('div');
+    bubble.className = 'tutor-bubble';
+    bubble.textContent = text;
+    row.appendChild(bubble);
+    return row;
+  }
+
+  function renderTutorScreen() {
+    if (!window.Tutor || !els.tutorMessages) return;
+    var history = window.Tutor.loadHistory();
+    els.tutorMessages.textContent = '';
+    if (!history.length) {
+      els.tutorMessages.appendChild(tutorMsgRow('tutor', t('tutorWelcome')));
+    } else {
+      history.forEach(function (m) {
+        els.tutorMessages.appendChild(tutorMsgRow(m.role, m.content));
+      });
+    }
+    els.tutorMessages.scrollTop = els.tutorMessages.scrollHeight;
+    if (els.tutorInput) els.tutorInput.placeholder = t('tutorPlaceholder');
+    if (els.tutorStatus) els.tutorStatus.textContent = t('tutorStatusIdle');
+    // 快捷提问 chips
+    if (els.tutorChips) {
+      var labels = { quiz: t('tutorChipQuiz'), due: t('tutorChipDue'), chat: t('tutorChipChat') };
+      els.tutorChips.querySelectorAll('.tutor-chip').forEach(function (chip) {
+        chip.textContent = labels[chip.dataset.prompt] || chip.dataset.prompt;
+      });
+    }
+  }
+
+  function tutorAppend(role, text) {
+    var history = window.Tutor.loadHistory();
+    history.push({ role: role, content: text, t: Date.now() });
+    window.Tutor.saveHistory(history);
+    if (els.tutorMessages) {
+      els.tutorMessages.appendChild(tutorMsgRow(role, text));
+      els.tutorMessages.scrollTop = els.tutorMessages.scrollHeight;
+    }
+  }
+
+  function tutorSend(promptText) {
+    if (tutorBusy || !window.Tutor) return;
+    var input = els.tutorInput ? els.tutorInput.value.trim() : '';
+    var text = promptText || input;
+    if (!text) return;
+
+    if (!window.Tutor.isConfigured()) {
+      flash(t('tutorNeedKey'), 'bad');
+      openTutorSettings();
+      return;
+    }
+
+    if (els.tutorInput) els.tutorInput.value = '';
+    tutorAppend('user', text);
+    tutorBusy = true;
+    if (els.tutorStatus) els.tutorStatus.textContent = t('tutorStatusThinking');
+    if (els.btnTutorSend) els.btnTutorSend.disabled = true;
+
+    // 流式气泡
+    var row = tutorMsgRow('tutor', '');
+    var bubble = row.querySelector('.tutor-bubble');
+    if (els.tutorMessages) {
+      els.tutorMessages.appendChild(row);
+      els.tutorMessages.scrollTop = els.tutorMessages.scrollHeight;
+    }
+    var acc = '';
+
+    window.Tutor.chat(window.Tutor.loadHistory().slice(0, -1).concat([{ role: 'user', content: text }]),
+      function (delta) {
+        acc += delta;
+        bubble.textContent = acc;
+        els.tutorMessages.scrollTop = els.tutorMessages.scrollHeight;
+      }
+    ).then(function (full) {
+      var reply = full || t('tutorEmpty');
+      tutorAppend('tutor', reply);
+      row.remove();
+      if (window.Speech && settings.speech) window.Speech.speak(reply.replace(/[a-zA-Z0-9\s]/g, '').slice(0, 60), 0.84);
+    }).catch(function (err) {
+      row.remove();
+      tutorAppend('tutor', t('tutorError') + ': ' + (err && err.message ? err.message : err));
+    }).then(function () {
+      tutorBusy = false;
+      if (els.tutorStatus) els.tutorStatus.textContent = t('tutorStatusIdle');
+      if (els.btnTutorSend) els.btnTutorSend.disabled = false;
+    });
+  }
+
+  function openTutorSettings() {
+    if (!window.Tutor || !els.tutorModal) return;
+    var s = window.Tutor.loadSettings();
+    els.tutorBaseUrl.value = s.baseUrl;
+    els.tutorKey.value = s.apiKey;
+    els.tutorModel.value = s.model;
+    els.tutorModal.hidden = false;
+  }
+
+  function closeTutorSettings() {
+    if (els.tutorModal) els.tutorModal.hidden = true;
   }
 
   /* ---------------- 🎙️ 跟读中心 (Speak) ---------------- */
@@ -2365,6 +2491,53 @@
       });
     }
 
+    // Tutor 绑定
+    if (els.btnTutorSend) {
+      els.btnTutorSend.addEventListener('click', function () { tutorSend(); });
+    }
+    if (els.tutorInput) {
+      els.tutorInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          tutorSend();
+        }
+      });
+    }
+    if (els.tutorChips) {
+      els.tutorChips.querySelectorAll('.tutor-chip').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          tutorSend((t('tutorQuick') || {})[chip.dataset.prompt]);
+        });
+      });
+    }
+    if (els.btnTutorClear) {
+      els.btnTutorClear.addEventListener('click', function () {
+        if (window.Tutor) window.Tutor.clearHistory();
+        renderTutorScreen();
+      });
+    }
+    if (els.btnTutorSettings) {
+      els.btnTutorSettings.addEventListener('click', openTutorSettings);
+    }
+    if (els.btnTutorClose) els.btnTutorClose.addEventListener('click', closeTutorSettings);
+    if (els.tutorModal) {
+      els.tutorModal.addEventListener('click', function (e) {
+        if (e.target === els.tutorModal) closeTutorSettings();
+      });
+    }
+    if (els.btnTutorSave) {
+      els.btnTutorSave.addEventListener('click', function () {
+        if (!window.Tutor) return;
+        window.Tutor.saveSettings({
+          baseUrl: els.tutorBaseUrl.value.trim() || window.Tutor.DEFAULT_SETTINGS.baseUrl,
+          apiKey: els.tutorKey.value.trim(),
+          model: els.tutorModel.value.trim() || window.Tutor.DEFAULT_SETTINGS.model
+        });
+        closeTutorSettings();
+        flash(t('tutorSaved'), 'good');
+      });
+    }
+
     // Speak 绑定
     if (els.btnSpkListen) {
       els.btnSpkListen.addEventListener('click', function () {
@@ -2528,6 +2701,13 @@
         if (e.key === 'Escape') {
           e.preventDefault();
           closeImportModal();
+        }
+        return;
+      }
+      if (els.tutorModal && !els.tutorModal.hidden) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeTutorSettings();
         }
         return;
       }

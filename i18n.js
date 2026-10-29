@@ -142,7 +142,23 @@
       homeFresh: '未学',
       homeLearning: '学习中',
       homeSolid: '巩固中',
-      homeMastered: '已掌握'
+      homeMastered: '已掌握',
+      navTutor: '🤖 助教',
+      tutorStatusIdle: 'AI 助教了解你的学习进度',
+      tutorStatusThinking: '助教思考中...',
+      tutorPlaceholder: '用中文或英文问助教...',
+      tutorSend: '发送',
+      tutorClear: '清空对话',
+      tutorSettings: '⚙️ 设置',
+      tutorWelcome: '你好！我是你的 AI 中文助教 🤖\n我知道你的练习数据和弱项，可以出题、纠音、陪你用中文聊天。先从下面的快捷问题开始吧。',
+      tutorChipQuiz: '考考我的弱项',
+      tutorChipDue: '今天该复习什么',
+      tutorChipChat: '用中文跟我聊聊',
+      tutorNeedKey: '请先在 ⚙️ 设置里填入 API Key',
+      tutorError: '助教出错了',
+      tutorEmpty: '回复为空，请重试',
+      tutorSaved: '设置已保存 ✓',
+      tutorQuick: { quiz: '请根据我的弱项，出一道小题考我，先别给答案。', due: '我今天该复习哪些内容？帮我安排一个 10 分钟的复习计划。', chat: '我们用简单的中文聊天吧，你先开头，遇到我说不出的词教我。' }
     },
     'en': {
       brand: 'Echo Hanzi',
@@ -279,7 +295,23 @@
       homeFresh: 'Unseen',
       homeLearning: 'Learning',
       homeSolid: 'Reviewing',
-      homeMastered: 'Mastered'
+      homeMastered: 'Mastered',
+      navTutor: '🤖 Tutor',
+      tutorStatusIdle: 'Your AI tutor knows your progress',
+      tutorStatusThinking: 'Thinking...',
+      tutorPlaceholder: 'Ask your tutor in Chinese or English...',
+      tutorSend: 'Send',
+      tutorClear: 'Clear Chat',
+      tutorSettings: '⚙️ Settings',
+      tutorWelcome: 'Hi! I am your AI Chinese tutor 🤖\nI know your practice stats and weak spots — I can quiz you, fix mistakes, or just chat in Chinese. Pick a quick prompt below to start.',
+      tutorChipQuiz: 'Quiz my weak spots',
+      tutorChipDue: 'What should I review today?',
+      tutorChipChat: 'Chat with me in Chinese',
+      tutorNeedKey: 'Please set your API Key in ⚙️ Settings first',
+      tutorError: 'Tutor error',
+      tutorEmpty: 'Empty reply, please try again',
+      tutorSaved: 'Settings saved ✓',
+      tutorQuick: { quiz: 'Quiz me on my weak spots with one small question. Do not reveal the answer yet.', due: 'What should I review today? Plan a 10-minute review session for me.', chat: 'Let us chat in simple Chinese. You start, and teach me words I am missing.' }
     }
   };
 

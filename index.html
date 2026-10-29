@@ -30,6 +30,7 @@
       <button class="hub-tab" id="tab-speak" type="button" data-hub="speak">🎙️ 跟读</button>
       <button class="hub-tab" id="tab-listen" type="button" data-hub="listen">🎧 听力</button>
       <button class="hub-tab" id="tab-read" type="button" data-hub="read">📖 阅读</button>
+      <button class="hub-tab" id="tab-tutor" type="button" data-hub="tutor">🤖 助教</button>
     </nav>
 
     <div class="controls">
@@ -222,6 +223,31 @@
 
     <div class="card read-card">
       <div class="read-article" id="read-article"></div>
+    </div>
+  </section>
+
+  <!-- 🤖 AI 助教 (Tutor) -->
+  <section class="screen tutor-screen" id="screen-tutor" hidden>
+    <div class="speak-header">
+      <span class="runline" id="tutor-status">AI 助教了解你的学习进度</span>
+      <div class="lsn-speed-ctrl">
+        <button class="ghost-btn" id="btn-tutor-clear" type="button">清空对话</button>
+        <button class="ghost-btn" id="btn-tutor-settings" type="button">⚙️ 设置</button>
+      </div>
+    </div>
+
+    <div class="card tutor-card">
+      <div class="tutor-messages" id="tutor-messages"></div>
+      <div class="tutor-chips" id="tutor-chips">
+        <button class="tutor-chip" type="button" data-prompt="quiz">考考我的弱项</button>
+        <button class="tutor-chip" type="button" data-prompt="due">今天该复习什么</button>
+        <button class="tutor-chip" type="button" data-prompt="chat">用中文跟我聊聊</button>
+      </div>
+      <div class="tutor-input-row">
+        <input class="listen-input tutor-input" id="tutor-input" type="text"
+          placeholder="用中文或英文问助教..." autocomplete="off" />
+        <button class="primary-btn" id="btn-tutor-send" type="button">发送</button>
+      </div>
     </div>
   </section>
 
@@ -446,6 +472,33 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="tutor-modal" hidden>
+  <div class="share-dialog">
+    <div class="stroke-header">
+      <div class="stroke-title-wrap">
+        <h3 class="share-title">AI 助教设置</h3>
+      </div>
+      <button class="ghost-btn iconly stroke-close" id="btn-tutor-close" type="button" title="关闭 (Esc)">✕</button>
+    </div>
+    <p class="tutor-note">自带 API Key（BYOK），仅保存在本机浏览器，不会上传。支持任意 OpenAI 兼容接口。</p>
+    <label class="tutor-field">
+      <span>API 地址 (Base URL)</span>
+      <input class="listen-input" id="tutor-baseurl" type="text" placeholder="https://api.openai.com/v1" />
+    </label>
+    <label class="tutor-field">
+      <span>API Key</span>
+      <input class="listen-input" id="tutor-key" type="password" placeholder="sk-..." />
+    </label>
+    <label class="tutor-field">
+      <span>模型</span>
+      <input class="listen-input" id="tutor-model" type="text" placeholder="gpt-4o-mini" />
+    </label>
+    <div class="import-actions">
+      <button class="primary-btn" id="btn-tutor-save" type="button">保存</button>
+    </div>
+  </div>
+</div>
+
 <div class="focus-hint" id="focus-hint" hidden>点一下页面开始输入</div>
 </div>
 
@@ -494,6 +547,7 @@
 <script src="i18n.js"></script>
 <script src="dict.js"></script>
 <script src="collection.js"></script>
+<script src="tutor.js"></script>
 <script src="stories.js"></script>
 <script src="ime.js"></script>
 <script src="custom.js"></script>
