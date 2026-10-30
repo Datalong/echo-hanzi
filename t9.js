@@ -12,8 +12,10 @@
     '6': 'mno', '7': 'pqrs', '8': 'tuv', '9': 'wxyz'
   };
 
-  var index = null; // digitStr -> [item]
+  var index = null;      // digitStr -> [词条]
   var indexKey = '';
+  var sentIndex = null;  // 句库独立索引
+  var sentIndexKey = '';
 
   function pinyinDigits(pinyin) {
     if (!global.Pinyin) return '';
@@ -31,29 +33,44 @@
     return out;
   }
 
-  /** 构建全量索引（词库变化时重新构建） */
-  function ensureIndex() {
-    var key = (global.WORD_LISTS && global.WORD_LISTS.all ? global.WORD_LISTS.all.length : 0) + '';
-    if (index && indexKey === key) return index;
-    index = {};
-    indexKey = key;
-    var pool = (global.WORD_LISTS && global.WORD_LISTS.all) || [];
+  /** 构建索引（通用：词库或句库） */
+  function buildIndex(pool) {
+    var idx = {};
     pool.forEach(function (item) {
       var digits = pinyinDigits(item.pinyin);
       if (!digits) return;
       // 按前缀入桶；桶满则跳过该层，但继续填更长的前缀（长前缀更精确，不能漏）
       for (var l = 1; l <= digits.length; l++) {
         var pre = digits.slice(0, l);
-        var bucket = index[pre] || (index[pre] = []);
+        var bucket = idx[pre] || (idx[pre] = []);
         if (bucket.length < 60 && bucket.indexOf(item) === -1) bucket.push(item);
       }
     });
+    return idx;
+  }
+
+  /** 构建全量词索引（词库变化时重新构建） */
+  function ensureIndex() {
+    var key = (global.WORD_LISTS && global.WORD_LISTS.all ? global.WORD_LISTS.all.length : 0) + '';
+    if (index && indexKey === key) return index;
+    index = buildIndex((global.WORD_LISTS && global.WORD_LISTS.all) || []);
+    indexKey = key;
     return index;
   }
 
-  /** 按已按的数字串取候选（去重，最多 max 个） */
-  function candidates(digits, max) {
-    var idx = ensureIndex();
+  /** 构建句库索引 */
+  function ensureSentenceIndex() {
+    var pool = (global.SENTENCE_LISTS && global.SENTENCE_LISTS.all) || [];
+    var key = pool.length + '';
+    if (sentIndex && sentIndexKey === key) return sentIndex;
+    sentIndex = buildIndex(pool);
+    sentIndexKey = key;
+    return sentIndex;
+  }
+
+  /** 按已按的数字串取候选（kind: 'word' | 'sent'） */
+  function candidates(digits, max, kind) {
+    var idx = kind === 'sent' ? ensureSentenceIndex() : ensureIndex();
     var bucket = idx[digits] || [];
     var seen = {};
     var out = [];

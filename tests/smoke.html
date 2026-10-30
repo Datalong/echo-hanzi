@@ -934,6 +934,27 @@ window.onload = async () => {
     .find(c => c.querySelector('.t9-cand-hz').textContent === doc.getElementById('t9-target-hz').textContent);
   if (rightCand) { rightCand.click(); await sleep(100); }
   ok('九键：判分反馈出现', !doc.getElementById('t9-feedback').hidden);
+  // 九键整句模式
+  doc.querySelector('#t9-modes [data-mode="sent"]').click();
+  await sleep(200);
+  ok('九键：整句模式渲染', doc.getElementById('t9-target-hz').textContent.length >= 3);
+  const sentHz = doc.getElementById('t9-target-hz').textContent;
+  const sentItem = win.SENTENCE_LISTS.all.find(x => x.hanzi === sentHz);
+  const sentDg = win.T9.digitsOf(sentItem);
+  ok('九键：整句数字串生成', sentDg.length >= 4, sentDg);
+  const keysS = [...doc.querySelectorAll('#t9-keys .t9-key')];
+  let pickedEarly = false;
+  for (let i = 0; i < sentDg.length && !pickedEarly; i++) {
+    const kb = keysS.find(k => k.querySelector('.t9-key-num') && k.querySelector('.t9-key-num').textContent === sentDg[i]);
+    if (kb) kb.click();
+    await sleep(40);
+    const cands = [...doc.querySelectorAll('#t9-cands .t9-cand')];
+    const right = cands.find(c => c.querySelector('.t9-cand-hz').textContent === sentHz);
+    if (right) { right.click(); pickedEarly = true; }
+  }
+  await sleep(100);
+  ok('九键：整句判分通过', !doc.getElementById('t9-feedback').hidden && doc.getElementById('t9-feedback').classList.contains('is-good'));
+
 
   // ---------- 设置中心 ----------
   doc.getElementById('btn-settings').click();

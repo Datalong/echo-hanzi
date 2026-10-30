@@ -382,6 +382,10 @@
   <!-- 📱 九键键盘训练 (T9) -->
   <section class="screen t9-screen" id="screen-t9" hidden>
     <div class="speak-header">
+      <div class="pron-cats" id="t9-modes">
+        <button class="tutor-chip is-active" type="button" data-mode="word">词语</button>
+        <button class="tutor-chip" type="button" data-mode="sent">整句</button>
+      </div>
       <span class="runline" id="t9-score">0 / 0 · 连对 0</span>
       <div class="lsn-speed-ctrl">
         <button class="toggle" id="btn-t9-hint" type="button">看拼音</button>
@@ -393,6 +397,7 @@
       <div class="t9-py-hint" id="t9-py-hint" hidden>kā fēi</div>
       <div class="t9-pressed" id="t9-pressed">_</div>
       <div class="t9-cands" id="t9-cands"></div>
+      <div class="t9-progress" id="t9-progress" hidden>0 / 0 键</div>
       <div class="t9-feedback" id="t9-feedback" hidden></div>
       <div class="t9-keys" id="t9-keys"></div>
       <button class="ghost-btn t9-skip" id="btn-t9-next" type="button">换一个词 →</button>

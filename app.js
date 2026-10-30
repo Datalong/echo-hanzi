@@ -90,6 +90,8 @@
     t9Feedback: $('t9-feedback'),
     t9HintBtn: $('btn-t9-hint'),
     t9Next: $('btn-t9-next'),
+    t9Modes: $('t9-modes'),
+    t9Progress: $('t9-progress'),
     chatMessages: $('chat-messages'),
     chatChips: $('chat-chips'),
     chatInput: $('chat-input'),
@@ -1457,8 +1459,15 @@
   var t9Pressed = '';
   var t9Stats = { ok: 0, total: 0, streak: 0 };
   var t9ShowHint = false;
+  var t9Mode = 'word'; // 'word' | 'sent'
 
   function t9Pool() {
+    if (t9Mode === 'sent') {
+      return ((window.SENTENCE_LISTS && window.SENTENCE_LISTS.all) || []).filter(function (s) {
+        var d = window.T9.digitsOf(s);
+        return d.length >= 4 && d.length <= 40;
+      });
+    }
     var all = (window.WORD_LISTS && window.WORD_LISTS.all) || [];
     // 优先 2-4 字词（拼音 4-12 位），更适合九键练习
     return all.filter(function (w) {
@@ -1474,6 +1483,7 @@
     t9Round = pool[Math.floor(Math.random() * pool.length)];
     t9Pressed = '';
     els.t9TargetHz.textContent = t9Round.hanzi;
+    els.t9TargetHz.classList.toggle('t9-sentence', t9Mode === 'sent');
     els.t9TargetEn.textContent = t9Round.english || '';
     els.t9PyHint.textContent = t9Round.pinyin;
     els.t9PyHint.hidden = !t9ShowHint;
@@ -1486,12 +1496,21 @@
     var shown = t9Pressed || '_';
     els.t9Pressed.textContent = shown;
     els.t9Cands.textContent = '';
+    if (els.t9Progress) {
+      if (t9Mode === 'sent' && t9Round) {
+        var total = window.T9.digitsOf(t9Round).length;
+        els.t9Progress.hidden = false;
+        els.t9Progress.textContent = Math.min(t9Pressed.length, total) + ' / ' + total + ' ' + t('t9Keys');
+      } else if (els.t9Progress) {
+        els.t9Progress.hidden = true;
+      }
+    }
     if (!t9Pressed) return;
-    var cands = window.T9.candidates(t9Pressed, 9);
+    var cands = window.T9.candidates(t9Pressed, 9, t9Mode === 'sent' ? 'sent' : 'word');
     cands.forEach(function (item) {
       var btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 't9-cand';
+      btn.className = 't9-cand' + (t9Mode === 'sent' ? ' t9-cand-sent' : '');
       btn.innerHTML = '<span class="t9-cand-hz"></span><span class="t9-cand-py"></span>';
       btn.querySelector('.t9-cand-hz').textContent = item.hanzi;
       btn.querySelector('.t9-cand-py').textContent = item.pinyin;
@@ -3502,6 +3521,18 @@
       els.btnReadQuiz.addEventListener('click', renderReadQuiz);
     }
 
+    // 九键模式切换
+    if (els.t9Modes) {
+      els.t9Modes.querySelectorAll('.tutor-chip').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          t9Mode = chip.dataset.mode;
+          els.t9Modes.querySelectorAll('.tutor-chip').forEach(function (c) {
+            c.classList.toggle('is-active', c === chip);
+          });
+          renderT9Screen();
+        });
+      });
+    }
     // 九键键盘绑定
     if (els.t9Keys) {
       Object.keys(window.T9.KEY_LETTERS).forEach(function (key) {
