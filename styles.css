@@ -11,26 +11,32 @@
   --faint: #5b6479;
   --accent: #5ee9b5;
   --accent-2: #6aa9ff;
+  --brand: #ff6b57;          /* 印章朱红：品牌主色 */
+  --brand-strong: #e04b38;
   --danger: #ff6b6b;
   --border: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.16);
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.18);
   --radius: 16px;
 }
 
 [data-theme="light"] {
-  --bg: #f6f7fa;
-  --bg-soft: #eef0f5;
+  --bg: #f7f4ef;
+  --bg-soft: #efeae2;
   --panel: #ffffff;
-  --text: #121722;
-  --muted: #5f6a7d;
-  --faint: #9aa3b2;
+  --text: #1c1917;
+  --muted: #6b6259;
+  --faint: #a39a8f;
   --accent: #0f9d76;
   --accent-2: #2f6fed;
+  --brand: #d5453c;
+  --brand-strong: #b7372f;
   --danger: #d94b4b;
-  --border: rgba(16, 22, 34, 0.09);
-  --border-strong: rgba(16, 22, 34, 0.18);
-  --shadow: 0 20px 50px rgba(20, 30, 60, 0.1);
+  --border: rgba(28, 25, 23, 0.1);
+  --border-strong: rgba(28, 25, 23, 0.2);
+  --shadow: 0 20px 50px rgba(60, 40, 30, 0.12);
+  --shadow-card: 0 2px 8px rgba(60, 40, 30, 0.08);
 }
 
 * { box-sizing: border-box; }
@@ -98,14 +104,14 @@ body::before {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 4px rgba(94, 233, 181, 0.14);
+  background: var(--brand);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 18%, transparent);
   animation: pulse 2.6s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 4px rgba(94, 233, 181, 0.14); }
-  50% { box-shadow: 0 0 0 8px rgba(94, 233, 181, 0.04); }
+  0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 18%, transparent); }
+  50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--brand) 5%, transparent); }
 }
 
 .controls {
@@ -492,16 +498,17 @@ body::before {
   font: inherit;
   font-size: 14px;
   font-weight: 600;
-  color: var(--bg);
-  background: var(--accent);
-  border: 1px solid var(--accent);
+  color: #fff;
+  background: var(--brand);
+  border: 1px solid var(--brand);
   border-radius: 11px;
   padding: 10px 22px;
   cursor: pointer;
   transition: transform 0.12s ease, filter 0.15s ease;
 }
 
-[data-theme="light"] .primary-btn { color: #fff; }
+.primary-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.primary-btn:active { transform: translateY(0) scale(0.98); }
 
 .primary-btn:hover { filter: brightness(1.06); }
 .primary-btn:active { transform: translateY(1px); }
@@ -2735,4 +2742,68 @@ kbd {
 .onboard-actions .primary-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* ============================================================
+   P4.3 视觉升级 — 动效与质感统一
+   ============================================================ */
+
+/* 中心切换：轻浮入 */
+.screen {
+  animation: screenIn 0.22s ease both;
+}
+
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 卡片统一投影 */
+.card {
+  box-shadow: var(--shadow-card);
+}
+
+/* 导航激活态：品牌色下划标 */
+.hub-tab {
+  position: relative;
+}
+
+.hub-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--brand);
+}
+
+/* 标题排版 */
+.home-title, .course-title, .dash-title, .read-title {
+  letter-spacing: 0.01em;
+}
+
+/* 卡片按压反馈 */
+.home-card:active,
+.course-card:active,
+.pron-option:active,
+.quiz-opt:active {
+  transform: scale(0.985);
+}
+
+/* 完课星星跳动 */
+.course-star.is-on {
+  animation: starPop 0.35s ease both;
+}
+
+@keyframes starPop {
+  0% { transform: scale(0.4); opacity: 0; }
+  70% { transform: scale(1.25); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 顶栏毛玻璃 */
+.topbar {
+  backdrop-filter: blur(10px);
 }

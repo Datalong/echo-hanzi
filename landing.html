@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="Echo Hanzi — 用打字学中文：拼音输入、声调听辨、间隔复习与 AI 助教。数据全在本机，一次购买永久使用。" />
+<title>Echo Hanzi — 用打字学中文</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<style>
+  :root {
+    --bg: #f7f4ef; --panel: #fff; --text: #1c1917; --muted: #6b6259;
+    --brand: #d5453c; --brand-strong: #b7372f; --accent: #0f9d76;
+    --border: rgba(28,25,23,.1); --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.6; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .seal {
+    width: 34px; height: 34px; border-radius: 8px; background: var(--brand); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;
+  }
+  .btn {
+    display: inline-block; text-decoration: none; font-weight: 600;
+    background: var(--brand); color: #fff; border-radius: 12px; padding: 12px 26px;
+    transition: transform .15s ease, filter .15s ease;
+  }
+  .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .hero { text-align: center; padding: 72px 0 56px; }
+  .hero h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.2; letter-spacing: -0.01em; }
+  .hero h1 em { font-style: normal; color: var(--brand); }
+  .hero p { font-size: 18px; color: var(--muted); max-width: 560px; margin: 18px auto 32px; }
+  .badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge {
+    font-size: 13px; color: var(--muted); background: var(--panel);
+    border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px;
+  }
+  .demo {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(60,40,30,.12); padding: 28px; max-width: 560px; margin: 0 auto;
+    text-align: left; font-size: 15px;
+  }
+  .demo .target { font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+  .demo .py { text-align: center; color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+  .cells { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .cell {
+    width: 34px; height: 40px; border-radius: 8px; border-bottom: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .cell.ok { color: var(--accent); border-color: var(--accent); }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 56px 0; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  .feat {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 22px; box-shadow: 0 2px 8px rgba(60,40,30,.06);
+  }
+  .feat .ico { font-size: 26px; margin-bottom: 10px; }
+  .feat h3 { font-size: 16px; margin-bottom: 6px; }
+  .feat p { font-size: 14px; color: var(--muted); }
+  .pricing { text-align: center; padding: 56px 0 72px; }
+  .pricing h2 { font-size: 28px; margin-bottom: 10px; }
+  .price { font-size: 44px; font-weight: 800; color: var(--brand); margin: 12px 0; }
+  .price small { font-size: 15px; color: var(--muted); font-weight: 500; }
+  .pricing ul { list-style: none; padding: 0; margin: 0 0 28px; color: var(--muted); font-size: 15px; }
+  .pricing li { margin: 6px 0; }
+  footer { border-top: 1px solid var(--border); padding: 24px 0; text-align: center; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="logo"><span class="seal">汉</span> Echo Hanzi</div>
+    <a class="btn" href="index.html">打开应用 →</a>
+  </nav>
+
+  <section class="hero">
+    <div class="badges">
+      <span class="badge">🚫 无订阅</span>
+      <span class="badge">🔒 数据全在本机</span>
+      <span class="badge">📴 可离线 (PWA)</span>
+      <span class="badge">🌐 中/英界面</span>
+    </div>
+    <h1>别的应用教你「认」中文，<br><em>Echo Hanzi 教你「打」中文</em></h1>
+    <p>拼音逐字校对、真实输入法候选框、声调最小对立听辨、AI 助教知道你的弱项。学的每一下，都是你以后在微信里打字的那一下。</p>
+    <a class="btn" href="index.html">免费开始练习 →</a>
+  </section>
+
+  <div class="demo" aria-hidden="true">
+    <div class="target">你好</div>
+    <div class="py">nǐ hǎo</div>
+    <div class="cells">
+      <span class="cell ok">n</span><span class="cell ok">i</span>
+      <span class="cell">_</span>
+      <span class="cell ok">h</span><span class="cell ok">a</span><span class="cell ok">o</span>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:13px">敲对变亮 · 敲错抖动 · 声调要按数字 · 候选框像真输入法</p>
+  </div>
+
+  <section class="grid">
+    <div class="feat"><div class="ico">🎓</div><h3>20 节主题课</h3><p>HSK 1 全部 150 词切成关卡式课程，通关得星解锁下一课，学完自动进入间隔复习。</p></div>
+    <div class="feat"><div class="ico">⌨️</div><h3>真实输入法训练</h3><p>IME 候选框、词组联想、空格选字——练的是你以后真的会用到的打字能力。</p></div>
+    <div class="feat"><div class="ico">🔊</div><h3>声调最小对立</h3><p>mā má mǎ mà、shì/sì、xīn/xīng——35 组听辨专项，答错自动进弱项统计。</p></div>
+    <div class="feat"><div class="ico">🤖</div><h3>懂你的 AI 助教</h3><p>它知道你哪个声母老错、哪些词该复习了，用它来出题、纠错、陪你聊天。</p></div>
+    <div class="feat"><div class="ico">📊</div><h3>打卡与弱项</h3><p>每日目标、连续天数、5 周热力图、易错声母韵母排行——进步看得见。</p></div>
+    <div class="feat"><div class="ico">🎙️</div><h3>听说读写全覆盖</h3><p>跟读评分、听写校对、沉浸阅读微词典、战绩海报分享，一个应用全包。</p></div>
+  </section>
+
+  <section class="pricing">
+    <h2>一次购买，永久使用</h2>
+    <div class="price">¥128 <small>/ $18 · 不订阅</small></div>
+    <ul>
+      <li>✓ HSK 2 / HSK 3 全词库（共 759 词）</li>
+      <li>✓ 发音听辨与 AI 助教无限量</li>
+      <li>✓ 无限自定义课程内容导入</li>
+      <li>✓ 学习笔记导出</li>
+      <li>✓ 未来全部 HSK 1 课程内容更新</li>
+    </ul>
+    <a class="btn" href="index.html">先用免费版试试 →</a>
+  </section>
+</div>
+
+<footer>Echo Hanzi — Learn Chinese by typing it. 零依赖 · 隐私优先 · 离线可用</footer>
+</body>
+</html>
