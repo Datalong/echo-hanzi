@@ -581,7 +581,7 @@ window.onload = async () => {
   ok('海报：Esc 关闭海报浮层', doc.getElementById('share-modal').hidden);
 
   // ---------- 四大中心全局架构 (Listen / Speak / Read / Write) ----------
-  ok('中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 10);
+  ok('中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 11);
   ok('总览：默认落在课程地图', !doc.getElementById('screen-course').hidden);
   ok('总览：切到总览页后记忆状态四档渲染', (doc.getElementById('tab-home').click(), await sleep(120), doc.getElementById('home-srs').children.length === 4));
   ok('总览：四张学习中心卡片', doc.getElementById('home-cards').querySelectorAll('.home-card').length === 4);
@@ -911,6 +911,30 @@ window.onload = async () => {
   lvMemes.dispatchEvent(new win.Event('change', { bubbles: true }));
   await sleep(150);
   ok('热梗：免费可选', lvMemes.value === 'memes');
+  // ---------- 九键键盘训练 (T9) ----------
+  ok('九键：T9 模块可用', typeof win.T9 === 'object' && typeof win.T9.candidates === 'function');
+  ok('九键：你好→64426', win.T9.digitsOf({ pinyin: 'nǐ hǎo' }) === '64426');
+  ok('九键：咖啡候选命中', win.T9.candidates('52334').some(x => x.hanzi === '咖啡'));
+  doc.getElementById('tab-t9').click();
+  await sleep(200);
+  ok('九键：进入九键中心', !doc.getElementById('screen-t9').hidden);
+  ok('九键：键盘 10 键（2-9+⌫）', doc.querySelectorAll('#t9-keys .t9-key').length === 9);
+  ok('九键：目标词渲染', doc.getElementById('t9-target-hz').textContent.length > 0);
+  const t9Digits = win.T9.digitsOf({ pinyin: doc.getElementById('t9-target-hz').textContent ? (win.WORD_LISTS.all.find(w => w.hanzi === doc.getElementById('t9-target-hz').textContent) || {}).pinyin : '' });
+  // 模拟按完整数字串 → 候选出现 → 点击正确项
+  const keys9 = [...doc.querySelectorAll('#t9-keys .t9-key')];
+  for (const dg of t9Digits) {
+    const kb = keys9.find(k => k.querySelector('.t9-key-num').textContent === dg);
+    if (kb) kb.click();
+  }
+  await sleep(100);
+  ok('九键：按完出现候选', doc.querySelectorAll('#t9-cands .t9-cand').length >= 1);
+  // 直接调内部流程验证判分：点击正确候选
+  const rightCand = [...doc.querySelectorAll('#t9-cands .t9-cand')]
+    .find(c => c.querySelector('.t9-cand-hz').textContent === doc.getElementById('t9-target-hz').textContent);
+  if (rightCand) { rightCand.click(); await sleep(100); }
+  ok('九键：判分反馈出现', !doc.getElementById('t9-feedback').hidden);
+
   // ---------- 设置中心 ----------
   doc.getElementById('btn-settings').click();
   await sleep(100);

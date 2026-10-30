@@ -79,6 +79,17 @@
     screenReview: $('screen-review'),
     screenPron: $('screen-pron'),
     screenChat: $('screen-chat'),
+    screenT9: $('screen-t9'),
+    t9Keys: $('t9-keys'),
+    t9Cands: $('t9-cands'),
+    t9Pressed: $('t9-pressed'),
+    t9TargetHz: $('t9-target-hz'),
+    t9TargetEn: $('t9-target-en'),
+    t9PyHint: $('t9-py-hint'),
+    t9Score: $('t9-score'),
+    t9Feedback: $('t9-feedback'),
+    t9HintBtn: $('btn-t9-hint'),
+    t9Next: $('btn-t9-next'),
     chatMessages: $('chat-messages'),
     chatChips: $('chat-chips'),
     chatInput: $('chat-input'),
@@ -319,6 +330,7 @@
     q('tab-review', t('navReview'));
     q('tab-pron', t('navPron'));
     q('tab-chat', t('navChat'));
+    q('tab-t9', t('navT9'));
     q('tab-write', t('navWrite'));
     q('tab-speak', t('navSpeak'));
     q('tab-listen', t('navListen'));
@@ -567,6 +579,7 @@
     els.screenReview.hidden = (hub !== 'review');
     els.screenPron.hidden = (hub !== 'pron');
     els.screenChat.hidden = (hub !== 'chat');
+    els.screenT9.hidden = (hub !== 't9');
     els.screenSpeak.hidden = (hub !== 'speak');
     els.screenListen.hidden = (hub !== 'listen');
     els.screenRead.hidden = (hub !== 'read');
@@ -587,6 +600,8 @@
       renderPronScreen();
     } else if (hub === 'chat') {
       renderChatScreen();
+    } else if (hub === 't9') {
+      renderT9Screen();
     } else if (hub === 'tutor') {
       renderTutorScreen();
     } else if (hub === 'write') {
@@ -1433,6 +1448,85 @@
         chatBusy = false;
         if (els.chatStatus) els.chatStatus.textContent = t('chatStatusIdle');
       }, 700);
+    }
+  }
+
+  /* ---------------- 📱 九键键盘训练 (T9) ---------------- */
+
+  var t9Round = null;
+  var t9Pressed = '';
+  var t9Stats = { ok: 0, total: 0, streak: 0 };
+  var t9ShowHint = false;
+
+  function t9Pool() {
+    var all = (window.WORD_LISTS && window.WORD_LISTS.all) || [];
+    // 优先 2-4 字词（拼音 4-12 位），更适合九键练习
+    return all.filter(function (w) {
+      var d = window.T9.digitsOf(w);
+      return d.length >= 4 && d.length <= 12;
+    });
+  }
+
+  function renderT9Screen() {
+    if (!window.T9 || !els.t9Keys) return;
+    var pool = t9Pool();
+    if (!pool.length) return;
+    t9Round = pool[Math.floor(Math.random() * pool.length)];
+    t9Pressed = '';
+    els.t9TargetHz.textContent = t9Round.hanzi;
+    els.t9TargetEn.textContent = t9Round.english || '';
+    els.t9PyHint.textContent = t9Round.pinyin;
+    els.t9PyHint.hidden = !t9ShowHint;
+    els.t9Cands.textContent = '';
+    els.t9Feedback.hidden = true;
+    updateT9Pressed();
+  }
+
+  function updateT9Pressed() {
+    var shown = t9Pressed || '_';
+    els.t9Pressed.textContent = shown;
+    els.t9Cands.textContent = '';
+    if (!t9Pressed) return;
+    var cands = window.T9.candidates(t9Pressed, 9);
+    cands.forEach(function (item) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 't9-cand';
+      btn.innerHTML = '<span class="t9-cand-hz"></span><span class="t9-cand-py"></span>';
+      btn.querySelector('.t9-cand-hz').textContent = item.hanzi;
+      btn.querySelector('.t9-cand-py').textContent = item.pinyin;
+      btn.addEventListener('click', function () { t9Pick(item); });
+      els.t9Cands.appendChild(btn);
+    });
+  }
+
+  function t9UpdateScore() {
+    if (els.t9Score) {
+      els.t9Score.textContent = t('pronMeta')
+        .replace('{ok}', t9Stats.ok).replace('{total}', t9Stats.total)
+        .replace('{streak}', t9Stats.streak);
+    }
+  }
+
+  function t9Pick(item) {
+    if (!t9Round) return;
+    t9Stats.total++;
+    var correct = item.hanzi === t9Round.hanzi;
+    if (correct) {
+      t9Stats.ok++;
+      t9Stats.streak++;
+      els.t9Feedback.hidden = false;
+      els.t9Feedback.className = 't9-feedback is-good';
+      els.t9Feedback.textContent = t('pronRight');
+      if (window.Speech && settings.speech) window.Speech.speak(t9Round.hanzi, 0.84);
+      t9UpdateScore();
+      setTimeout(renderT9Screen, 650);
+    } else {
+      t9Stats.streak = 0;
+      els.t9Feedback.hidden = false;
+      els.t9Feedback.className = 't9-feedback is-bad';
+      els.t9Feedback.textContent = t('pronWrong') + ' ' + t9Round.hanzi + ' (' + t9Round.pinyin + ')';
+      t9UpdateScore();
     }
   }
 
@@ -3407,6 +3501,43 @@
     if (els.btnReadQuiz) {
       els.btnReadQuiz.addEventListener('click', renderReadQuiz);
     }
+
+    // 九键键盘绑定
+    if (els.t9Keys) {
+      Object.keys(window.T9.KEY_LETTERS).forEach(function (key) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 't9-key';
+        btn.innerHTML = '<span class="t9-key-num"></span><span class="t9-key-abc"></span>';
+        btn.querySelector('.t9-key-num').textContent = key;
+        btn.querySelector('.t9-key-abc').textContent = window.T9.KEY_LETTERS[key].toUpperCase();
+        btn.addEventListener('click', function () {
+          if (!t9Round) return;
+          if (t9Pressed.length >= 14) return;
+          t9Pressed += key;
+          updateT9Pressed();
+          if (settings.sound && window.Sound) window.Sound.click();
+        });
+        els.t9Keys.appendChild(btn);
+      });
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 't9-key t9-key-del';
+      del.textContent = '⌫';
+      del.addEventListener('click', function () {
+        t9Pressed = t9Pressed.slice(0, -1);
+        updateT9Pressed();
+      });
+      els.t9Keys.appendChild(del);
+    }
+    if (els.t9HintBtn) {
+      els.t9HintBtn.addEventListener('click', function () {
+        t9ShowHint = !t9ShowHint;
+        els.t9HintBtn.classList.toggle('is-active', t9ShowHint);
+        els.t9PyHint.hidden = !t9ShowHint;
+      });
+    }
+    if (els.t9Next) els.t9Next.addEventListener('click', renderT9Screen);
 
     // 设置中心绑定
     if (els.btnSettings) els.btnSettings.addEventListener('click', openSettings);

@@ -2931,3 +2931,153 @@ kbd {
 @media (max-width: 700px) {
   .ach-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ---------------- 📱 九键键盘训练 (T9) ---------------- */
+
+.t9-screen {
+  gap: 16px;
+  justify-content: flex-start;
+  padding-top: 20px;
+}
+
+.t9-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 380px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.t9-target-hz {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.t9-target-en {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: -6px;
+}
+
+.t9-py-hint {
+  font-size: 15px;
+  color: var(--accent-2);
+}
+
+.t9-pressed {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  color: var(--brand);
+  min-height: 28px;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.t9-cands {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.t9-cand {
+  appearance: none;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.t9-cand:hover { border-color: var(--accent); }
+
+.t9-cand-hz { font-size: 16px; font-weight: 600; color: var(--text); }
+.t9-cand-py { font-size: 11px; color: var(--muted); }
+
+.t9-feedback {
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 20px;
+}
+
+.t9-feedback.is-good { color: var(--accent); }
+.t9-feedback.is-bad { color: var(--danger); }
+
+.t9-keys {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.t9-key {
+  appearance: none;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 10px 0 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.1s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.t9-key:active { transform: scale(0.95); border-color: var(--brand); }
+
+.t9-key-num { font-size: 18px; font-weight: 700; color: var(--text); }
+.t9-key-abc { font-size: 9px; letter-spacing: 0.15em; color: var(--muted); }
+
+.t9-key-del { grid-column: 5; font-size: 18px; }
+
+.t9-skip { margin-top: 2px; font-size: 13px; }
+
+/* ---------------- 移动端底部 Tab 栏 ---------------- */
+
+@media (max-width: 700px) {
+  .app {
+    padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .topbar .hub-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    justify-content: space-around;
+    overflow-x: auto;
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.25);
+  }
+
+  .hub-tab {
+    flex: 1 0 auto;
+    padding: 8px 8px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .hub-tab.is-active::after {
+    left: 8px;
+    right: 8px;
+    bottom: 0;
+  }
+}

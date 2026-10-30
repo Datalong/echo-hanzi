@@ -34,6 +34,7 @@
       <button class="hub-tab" id="tab-review" type="button" data-hub="review">📋 复习</button>
       <button class="hub-tab" id="tab-pron" type="button" data-hub="pron">🔊 发音</button>
       <button class="hub-tab" id="tab-chat" type="button" data-hub="chat">💬 聊天</button>
+      <button class="hub-tab" id="tab-t9" type="button" data-hub="t9">📱 九键</button>
       <button class="hub-tab" id="tab-tutor" type="button" data-hub="tutor">🤖 助教</button>
     </nav>
 
@@ -375,6 +376,26 @@
           placeholder="用你的输入法打中文..." autocomplete="off" />
         <button class="primary-btn" id="btn-chat-send" type="button">发送</button>
       </div>
+    </div>
+  </section>
+
+  <!-- 📱 九键键盘训练 (T9) -->
+  <section class="screen t9-screen" id="screen-t9" hidden>
+    <div class="speak-header">
+      <span class="runline" id="t9-score">0 / 0 · 连对 0</span>
+      <div class="lsn-speed-ctrl">
+        <button class="toggle" id="btn-t9-hint" type="button">看拼音</button>
+      </div>
+    </div>
+    <div class="card t9-card">
+      <div class="t9-target-hz" id="t9-target-hz">咖啡</div>
+      <div class="t9-target-en" id="t9-target-en">coffee</div>
+      <div class="t9-py-hint" id="t9-py-hint" hidden>kā fēi</div>
+      <div class="t9-pressed" id="t9-pressed">_</div>
+      <div class="t9-cands" id="t9-cands"></div>
+      <div class="t9-feedback" id="t9-feedback" hidden></div>
+      <div class="t9-keys" id="t9-keys"></div>
+      <button class="ghost-btn t9-skip" id="btn-t9-next" type="button">换一个词 →</button>
     </div>
   </section>
 
@@ -788,6 +809,7 @@
 <script src="license.js"></script>
 <script src="course.js"></script>
 <script src="achievements.js"></script>
+<script src="t9.js"></script>
 <script src="tutor.js"></script>
 <script src="pron.js"></script>
 <script src="stories.js"></script>
