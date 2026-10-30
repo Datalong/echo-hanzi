@@ -2163,6 +2163,7 @@
     if (els.hintPunct) els.hintPunct.hidden = !isSentenceMode();
     if (settings.echo) {
       els.card.classList.add('masked');
+      // 发声由 audio.js 的手势门槛控制：用户交互前不会真的出声
       speak(item.hanzi);
     }
 

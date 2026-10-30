@@ -104,8 +104,23 @@
       global.speechSynthesis.addEventListener('voiceschanged', refreshVoices);
     }
 
+    var userGestured = false;
+    // 自动播放策略：任何用户交互之前不允许发声，避免进站突然说话
+    if (typeof document !== 'undefined') {
+      var markGesture = function () {
+        userGestured = true;
+        document.removeEventListener('pointerdown', markGesture);
+        document.removeEventListener('keydown', markGesture);
+        document.removeEventListener('touchstart', markGesture);
+      };
+      document.addEventListener('pointerdown', markGesture);
+      document.addEventListener('keydown', markGesture);
+      document.addEventListener('touchstart', markGesture);
+    }
+
     function speak(text, rate, onEndCallback) {
       if (!supported || !text) return;
+      if (!userGestured) return; // 用户还没碰过页面，静默
       var clean = text.trim();
       if (!clean) return;
 
