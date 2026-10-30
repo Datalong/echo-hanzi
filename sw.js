@@ -13,6 +13,7 @@ var PRECACHE_URLS = [
   './dict.js',
   './collection.js',
   './license.js',
+  './course.js',
   './tutor.js',
   './pron.js',
   './stories.js',

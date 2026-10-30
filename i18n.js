@@ -9,6 +9,7 @@
   var TRANSLATIONS = {
     'zh-CN': {
       brand: 'Echo Hanzi',
+      navCourse: '🎓 课程',
       navHome: '🏠 总览',
       navWrite: '⌨️ 打字',
       navSpeak: '🎙️ 跟读',
@@ -162,6 +163,9 @@
       proBadKey: 'License Key 无效',
       tutorQuota: '今日 AI 助教条数已用完，升级 Pro 无限使用',
       pronQuota: '今日听辨题已用完，升级 Pro 无限练习',
+      courseLessons: '课',
+      courseLocked: '通关上一课解锁',
+      courseDone: '本课通关！获得 {stars} 星 ✓',
       btnSpkReplay: '▶ 我的录音',
       reviewDueCount: '个到期',
       reviewEmpty: '太棒了，没有到期的复习内容！学点新的吧。',
@@ -186,6 +190,7 @@
     },
     'en': {
       brand: 'Echo Hanzi',
+      navCourse: '🎓 Course',
       navHome: '🏠 Home',
       navWrite: '⌨️ Write',
       navSpeak: '🎙️ Speak',
@@ -339,6 +344,9 @@
       proBadKey: 'Invalid license key',
       tutorQuota: 'Daily AI tutor messages used up — go Pro for unlimited',
       pronQuota: 'Daily listening drills used up — go Pro for unlimited',
+      courseLessons: 'lessons',
+      courseLocked: 'Finish the previous lesson to unlock',
+      courseDone: 'Lesson complete! {stars} star(s) earned ✓',
       btnSpkReplay: '▶ My Recording',
       reviewDueCount: ' due',
       reviewEmpty: 'All caught up! Nothing due for review.',

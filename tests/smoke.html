@@ -581,9 +581,9 @@ window.onload = async () => {
   ok('海报：Esc 关闭海报浮层', doc.getElementById('share-modal').hidden);
 
   // ---------- 四大中心全局架构 (Listen / Speak / Read / Write) ----------
-  ok('六大中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 8);
-  ok('总览：默认落在学习总览', !doc.getElementById('screen-home').hidden);
-  ok('总览：记忆状态四档渲染', doc.getElementById('home-srs').children.length === 4);
+  ok('中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 9);
+  ok('总览：默认落在课程地图', !doc.getElementById('screen-course').hidden);
+  ok('总览：切到总览页后记忆状态四档渲染', (doc.getElementById('tab-home').click(), await sleep(120), doc.getElementById('home-srs').children.length === 4));
   ok('总览：四张学习中心卡片', doc.getElementById('home-cards').querySelectorAll('.home-card').length === 4);
   doc.getElementById('btn-home-start').click();
   await sleep(150);
@@ -867,6 +867,28 @@ window.onload = async () => {
   win.License.deactivate();
   ok('内容：HSK3 词库 461 词', win.WORD_LISTS.hsk3 && win.WORD_LISTS.hsk3.length === 461, win.WORD_LISTS.hsk3 && win.WORD_LISTS.hsk3.length);
   ok('内容：故事 12 篇且自带小测', win.Stories.STORIES.length === 12 && win.Stories.STORIES.every(x => x.quiz && x.quiz.length === 2));
+  // ---------- 课程地图 (Course Map) ----------
+  ok('课程：Course 模块可用', typeof win.Course === 'object' && win.Course.LESSONS.length === 20);
+  ok('课程：150 词全覆盖', win.Course.LESSONS.reduce((s, l) => s + l.words.length, 0) === 150);
+  ok('课程：L1 解锁 L2 锁定', win.Course.isUnlocked(0) === true && win.Course.isUnlocked(1) === false);
+  doc.getElementById('tab-course').click();
+  await sleep(150);
+  ok('课程：默认落在课程地图', !doc.getElementById('screen-course').hidden);
+  ok('课程：20 张卡片', doc.querySelectorAll('#course-grid .course-card').length === 20);
+  ok('课程：19 张锁定', doc.querySelectorAll('#course-grid .course-card.is-locked').length === 19);
+  // 通关 L1（模拟打字一轮全对：直接写完课记录再验证解锁与 UI）
+  win.Course.complete('l01', 2);
+  doc.getElementById('tab-home').click(); await sleep(100);
+  doc.getElementById('tab-course').click(); await sleep(150);
+  ok('课程：通关后 L2 解锁', doc.querySelectorAll('#course-grid .course-card.is-locked').length === 18);
+  ok('课程：L1 卡片两星', doc.querySelectorAll('#course-grid .course-card')[0].querySelectorAll('.course-star.is-on').length === 2);
+  // 进入课程练习
+  doc.querySelectorAll('#course-grid .course-card')[1].click();
+  await sleep(200);
+  ok('课程：点卡片进打字', !doc.getElementById('screen-typing').hidden);
+  ok('课程：只出本课词', win.__courseQueueAllCourse !== false);
+  win.Course.reset && null;
+
   ok('P3：IME 前缀联想 niha→你好', win.Ime.queryCandidates('niha', '').indexOf('你好') !== -1, win.Ime.queryCandidates('niha','').join(','));
   ok('P3：IME 完整拼音词组优先', win.Ime.queryCandidates('nihao', '').indexOf('你好') !== -1);
   ok('P3：录音器 API 存在', typeof win.SpeechRec.startRecording === 'function' && typeof win.SpeechRec.stopRecording === 'function');

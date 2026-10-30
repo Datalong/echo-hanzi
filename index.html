@@ -25,7 +25,8 @@
 
     <!-- 四大核心中心全局导航 -->
     <nav class="hub-nav" id="hub-nav">
-      <button class="hub-tab is-active" id="tab-home" type="button" data-hub="home">🏠 总览</button>
+      <button class="hub-tab is-active" id="tab-course" type="button" data-hub="course">🎓 课程</button>
+      <button class="hub-tab" id="tab-home" type="button" data-hub="home">🏠 总览</button>
       <button class="hub-tab" id="tab-write" type="button" data-hub="write">⌨️ 打字</button>
       <button class="hub-tab" id="tab-speak" type="button" data-hub="speak">🎙️ 跟读</button>
       <button class="hub-tab" id="tab-listen" type="button" data-hub="listen">🎧 听力</button>
@@ -104,6 +105,18 @@
       <button class="toggle iconly" id="tg-theme" type="button" title="切换主题">◐</button>
     </div>
   </header>
+
+  <!-- 🎓 课程地图 (Course) -->
+  <section class="screen course-screen" id="screen-course" hidden>
+    <div class="course-head">
+      <div>
+        <h2 class="course-title">HSK 1 课程</h2>
+        <span class="course-sub" id="course-progress">0 / 20 课</span>
+      </div>
+      <div class="course-bar"><div class="course-bar-fill" id="course-bar-fill"></div></div>
+    </div>
+    <div class="course-grid" id="course-grid"></div>
+  </section>
 
   <!-- 🏠 学习总览 (Home) -->
   <section class="screen home-screen" id="screen-home" hidden>
@@ -661,6 +674,7 @@
 <script src="dict.js"></script>
 <script src="collection.js"></script>
 <script src="license.js"></script>
+<script src="course.js"></script>
 <script src="tutor.js"></script>
 <script src="pron.js"></script>
 <script src="stories.js"></script>

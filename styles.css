@@ -2532,3 +2532,132 @@ kbd {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+
+/* ---------------- 🎓 课程地图 (Course) ---------------- */
+
+.course-screen {
+  gap: 20px;
+  justify-content: flex-start;
+  padding-top: 24px;
+}
+
+.course-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.course-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.course-sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.course-bar {
+  flex: 1;
+  min-width: 160px;
+  max-width: 320px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+
+.course-bar-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.course-card {
+  appearance: none;
+  font: inherit;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.course-card:not(.is-locked):hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+.course-card.is-locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.course-card.is-done {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
+
+.course-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--bg-soft);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.course-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.course-card-words {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.course-stars {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.course-star {
+  font-size: 14px;
+  color: var(--border);
+}
+
+.course-star.is-on { color: #f0b429; }
+
+.course-lock-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+@media (max-width: 700px) {
+  .course-grid { grid-template-columns: repeat(2, 1fr); }
+}

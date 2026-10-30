@@ -71,6 +71,10 @@
     rsDue: $('rs-due'),
     stats: $('screen-stats'),
     screenHome: $('screen-home'),
+    screenCourse: $('screen-course'),
+    courseGrid: $('course-grid'),
+    courseProgress: $('course-progress'),
+    courseBarFill: $('course-bar-fill'),
     screenTutor: $('screen-tutor'),
     screenReview: $('screen-review'),
     screenPron: $('screen-pron'),
@@ -256,10 +260,11 @@
     dictTimer: null,
     dictChar: '',
     shareCanvas: null,
-    currentHub: 'home',
+    currentHub: 'course',
     speakIndex: 0,
     listenIndex: 0,
-    readStoryId: 'beijing-trip'
+    readStoryId: 'beijing-trip',
+    courseLessonId: null
   };
   var srsDb = window.Srs ? window.Srs.load() : {};
   var srsSaveTimer = null;
@@ -287,6 +292,7 @@
 
     var q = function(id, text) { var el = $(id); if (el) el.textContent = text; };
 
+    q('tab-course', t('navCourse'));
     q('tab-home', t('navHome'));
     q('tab-tutor', t('navTutor'));
     q('tab-review', t('navReview'));
@@ -534,6 +540,7 @@
 
     els.typing.hidden = (hub !== 'write');
     els.screenHome.hidden = (hub !== 'home');
+    els.screenCourse.hidden = (hub !== 'course');
     els.screenTutor.hidden = (hub !== 'tutor');
     els.screenReview.hidden = (hub !== 'review');
     els.screenPron.hidden = (hub !== 'pron');
@@ -547,7 +554,9 @@
     els.result.hidden = true;
     if (els.stats) els.stats.hidden = true;
 
-    if (hub === 'home') {
+    if (hub === 'course') {
+      renderCourseScreen();
+    } else if (hub === 'home') {
       renderHomeScreen();
     } else if (hub === 'review') {
       renderReviewScreen();
@@ -626,6 +635,66 @@
         cursor.setDate(cursor.getDate() + 1);
       }
     }
+  }
+
+  /* ---------------- 🎓 课程地图 (Course) ---------------- */
+
+  var courseLesson = null; // 当前正在上的课
+
+  function renderCourseScreen() {
+    if (!window.Course || !els.courseGrid) return;
+    var prog = window.Course.progress();
+    if (els.courseProgress) {
+      els.courseProgress.textContent = prog.done + ' / ' + prog.total + ' ' + t('courseLessons') +
+        ' · ' + prog.stars + ' / ' + prog.maxStars + ' ★';
+    }
+    if (els.courseBarFill) {
+      els.courseBarFill.style.width = Math.round(prog.stars / prog.maxStars * 100) + '%';
+    }
+
+    els.courseGrid.textContent = '';
+    window.Course.LESSONS.forEach(function (lesson, i) {
+      var unlocked = window.Course.isUnlocked(i);
+      var stars = window.Course.starsOf(lesson.id);
+      var card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'course-card' +
+        (unlocked ? '' : ' is-locked') +
+        (stars > 0 ? ' is-done' : '');
+
+      var num = span('course-num', unlocked ? String(i + 1) : '🔒');
+      var title = span('course-card-title', lesson.title);
+      var words = span('course-card-words', lesson.words.join(' '));
+      var starRow = document.createElement('div');
+      starRow.className = 'course-stars';
+      for (var s = 0; s < 3; s++) {
+        starRow.appendChild(span('course-star' + (s < stars ? ' is-on' : ''), '★'));
+      }
+      if (!unlocked) starRow.appendChild(span('course-lock-hint', t('courseLocked')));
+
+      card.appendChild(num);
+      card.appendChild(title);
+      card.appendChild(words);
+      card.appendChild(starRow);
+
+      if (unlocked) {
+        card.addEventListener('click', function () { startCourseLesson(lesson); });
+      }
+      els.courseGrid.appendChild(card);
+    });
+  }
+
+  /** 从课程地图进入一课：只出本课词，词模式全量 */
+  function startCourseLesson(lesson) {
+    courseLesson = lesson;
+    state.courseLessonId = lesson.id;
+    settings.mode = 'word';
+    settings.level = 'hsk1';
+    settings.count = 0; // 全部
+    saveSettings();
+    applySettingsToUI();
+    switchHub('write');
+    startSession();
   }
 
   /* ---------------- 🏠 学习总览 (Home) ---------------- */
@@ -1772,7 +1841,7 @@
       });
       return storyQueue;
     }
-    var pool = drillPool();
+    var pool = (state.courseLessonId && window.Course && coursePool()) || drillPool();
     if (isSentenceMode() && !state.drill && window.Custom) {
       var customItems = [];
       window.Custom.load().forEach(function (entry) {
@@ -2683,6 +2752,17 @@
     focusCatcher();
   }
 
+  /** 课程模式：只出本课词 */
+  function coursePool() {
+    if (!window.Course || !state.courseLessonId) return null;
+    for (var i = 0; i < window.Course.LESSONS.length; i++) {
+      if (window.Course.LESSONS[i].id === state.courseLessonId) {
+        return window.Course.lessonItems(window.Course.LESSONS[i]);
+      }
+    }
+    return null;
+  }
+
   function finish() {
     state.finished = true;
     if (ticker) { clearInterval(ticker); ticker = null; }
@@ -2696,6 +2776,17 @@
     els.rsStreak.textContent = String(state.bestStreak);
     els.rsTime.textContent = formatTime(elapsed());
     if (window.Srs) persistSrs(true);
+    // 课程完课评星：≥60% 一星，≥75% 两星，≥90% 三星
+    if (state.courseLessonId && window.Course) {
+      var acc = accuracy();
+      var stars = acc >= 90 ? 3 : acc >= 75 ? 2 : acc >= 60 ? 1 : 0;
+      if (stars > 0) {
+        window.Course.complete(state.courseLessonId, stars);
+        flash(t('courseDone').replace('{stars}', stars), 'good');
+      }
+      state.courseLessonId = null;
+      courseLesson = null;
+    }
     if (window.Stats) {
       window.Stats.recordSession(statsDb, {
         t: Date.now(),
@@ -3351,7 +3442,7 @@
     }
     if (!window.SENTENCE_LISTS) settings.mode = 'word';
     startSession();
-    switchHub('home');
+    switchHub('course');
     setTimeout(focusCatcher, 60);
     document.documentElement.setAttribute('data-app-ready', '1');
     registerServiceWorker();
