@@ -819,6 +819,50 @@
     ['黑板', 'hēibǎn', 'blackboard'],
   ];
 
+
+  var MEMES = [
+    ['内卷', 'nèijuǎn', 'rat race; endless competition'],
+    ['躺平', 'tǎngpíng', 'lie flat; opt out of the rat race'],
+    ['摆烂', 'bǎilàn', 'let it rot; stop trying'],
+    ['凡尔赛', 'fán érsài', 'humblebrag'],
+    ['绝绝子', 'juéjuézǐ', 'amazing (or awful); "absolutely"'],
+    ['破防', 'pòfáng', 'defenses broken; emotionally hit'],
+    ['社死', 'shèsǐ', 'social death; die of embarrassment'],
+    ['打工人', 'dǎgōngrén', 'wage earner; working folks'],
+    ['干饭人', 'gānfànrén', 'chowhound; serious eater'],
+    ['吃瓜', 'chīguā', 'watching drama as a bystander'],
+    ['吃瓜群众', 'chīguā qúnzhòng', 'the onlooking crowd'],
+    ['上头', 'shàngtóu', 'obsessed; hooked'],
+    ['下头', 'xiàtóu', 'turned off; a letdown'],
+    ['佛系', 'fóxì', 'buddha-like; super chill'],
+    ['拿捏', 'nániē', 'to have it totally under control'],
+    ['格局', 'géjú', 'perspective; big-picture mindset'],
+    ['格局打开', 'géjú dǎkāi', 'broaden your horizons'],
+    ['爷青回', 'yéqīnghuí', 'my youth is back!'],
+    ['无语子', 'wúyǔzǐ', 'speechless'],
+    ['锦鲤', 'jǐnlǐ', 'lucky koi; lucky charm person'],
+    ['割韭菜', 'gē jiǔcài', 'harvest the leeks; fleece retail folks'],
+    ['打卡', 'dǎkǎ', 'check in (daily habit)'],
+    ['点赞', 'diǎnzàn', 'to like (a post)'],
+    ['拉黑', 'lāhēi', 'to block someone'],
+    ['柠檬精', 'níngméngjīng', 'jealous lemon; green with envy'],
+    ['杠精', 'gàngjīng', 'contrarian troll'],
+    ['后浪', 'hòulàng', 'the new wave; younger generation'],
+    ['打脸', 'dǎliǎn', 'to get slapped in the face by reality'],
+    ['官宣', 'guānxuān', 'official announcement (of a relationship)'],
+    ['冲鸭', 'chōngyā', 'Go for it! (duck pun)'],
+    ['安利', 'ānlì', 'to passionately recommend'],
+    ['种草', 'zhòngcào', 'to plant grass; make someone want it'],
+    ['拔草', 'bácǎo', 'to kill the urge; finally bought it'],
+    ['带货', 'dàihuò', 'livestream selling'],
+    ['真香', 'zhēnxiāng', '"actually pretty great" (breaking a vow)'],
+    ['硬核', 'yìnghé', 'hardcore'],
+    ['心态崩了', 'xīntài bēng le', 'mentally collapsed; tilted'],
+    ['一言难尽', 'yīyán nánjìn', 'it is a long story'],
+    ['永远的神', 'yuǎnyuǎn de shén', 'GOAT (yyds)'],
+    ['栓Q', 'shuānQ', 'thank you (sarcastic meme)'],
+  ];
+
   function toObjects(rows, level) {
     return rows.map(function (row) {
       return { hanzi: row[0], pinyin: row[1], english: row[2], level: level };
@@ -828,7 +872,8 @@
   var LISTS = {
     hsk1: toObjects(HSK1, 'HSK 1'),
     hsk2: toObjects(HSK2, 'HSK 2'),
-    hsk3: toObjects(HSK3, 'HSK 3')
+    hsk3: toObjects(HSK3, 'HSK 3'),
+    memes: toObjects(MEMES, '热梗')
   };
   LISTS.all12 = LISTS.hsk1.concat(LISTS.hsk2);
   LISTS.all = LISTS.hsk1.concat(LISTS.hsk2).concat(LISTS.hsk3);

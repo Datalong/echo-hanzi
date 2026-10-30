@@ -120,9 +120,10 @@
    * 发起对话（流式）
    * @param {Array<{role,content}>} msgs 完整消息列表（含新用户消息）
    * @param {(delta:string)=>void} onDelta 增量回调
+   * @param {string} [persona] 追加到系统提示后的角色设定
    * @returns {Promise<string>} 完整回复
    */
-  function chat(msgs, onDelta) {
+  function chat(msgs, onDelta, persona) {
     var s = loadSettings();
     if (!s.apiKey) return Promise.reject(new Error('NO_API_KEY'));
 
@@ -130,7 +131,7 @@
       model: s.model,
       stream: true,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT + '\n\n[学习上下文]\n' + buildContext() }
+        { role: 'system', content: SYSTEM_PROMPT + (persona ? '\n\n[角色设定]\n' + persona : '') + '\n\n[学习上下文]\n' + buildContext() }
       ].concat(msgs.slice(-12))
     };
 

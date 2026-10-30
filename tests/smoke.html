@@ -581,7 +581,7 @@ window.onload = async () => {
   ok('海报：Esc 关闭海报浮层', doc.getElementById('share-modal').hidden);
 
   // ---------- 四大中心全局架构 (Listen / Speak / Read / Write) ----------
-  ok('中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 9);
+  ok('中心：导航 Tab 齐备', doc.querySelectorAll('.hub-tab').length === 10);
   ok('总览：默认落在课程地图', !doc.getElementById('screen-course').hidden);
   ok('总览：切到总览页后记忆状态四档渲染', (doc.getElementById('tab-home').click(), await sleep(120), doc.getElementById('home-srs').children.length === 4));
   ok('总览：四张学习中心卡片', doc.getElementById('home-cards').querySelectorAll('.home-card').length === 4);
@@ -764,6 +764,22 @@ window.onload = async () => {
   win.Tutor.clearHistory();
   win.Tutor.saveSettings({ apiKey: '' });
 
+  // ---------- 聊天打字场 ----------
+  doc.getElementById('tab-chat').click();
+  await sleep(150);
+  ok('聊天：进入聊天场', !doc.getElementById('screen-chat').hidden);
+  ok('聊天：欢迎气泡', doc.getElementById('chat-messages').textContent.indexOf('小柯') !== -1);
+  doc.getElementById('chat-input').value = '你好';
+  doc.getElementById('btn-chat-send').click();
+  await sleep(1100);
+  ok('聊天：用户气泡上屏', doc.getElementById('chat-messages').textContent.indexOf('你好') !== -1);
+  ok('聊天：脚本笔友回复', (() => { const rows = doc.querySelectorAll('#chat-messages .chat-row-bot'); return rows.length >= 2 && rows[rows.length-1].textContent.length > 0; })());
+  ok('聊天：热梗话题标签', doc.querySelectorAll('#chat-chips .tutor-chip').length === 4);
+  doc.getElementById('chat-chips').querySelector('[data-topic="memes"]').click();
+  await sleep(1100);
+  ok('聊天：热梗话题有回复', (() => { const rows = doc.querySelectorAll('#chat-messages .chat-row-bot'); return rows.length >= 3; })());
+
+
   // ---------- 每日打卡 (Learning Today) ----------
   ok('打卡：Stats.dailyMap 可用', typeof win.Stats.dailyMap === 'function');
   ok('打卡：XP 计算非负', win.Stats.totalXp(win.Stats.load()) >= 0);
@@ -889,6 +905,13 @@ window.onload = async () => {
   win.Course.reset && null;
 
   // ---------- 首访引导 (Onboarding) ----------
+  ok('热梗：词库 40 个', win.WORD_LISTS.memes.length === 40, win.WORD_LISTS.memes.length);
+  const lvMemes = doc.getElementById('sel-level');
+  lvMemes.value = 'memes';
+  lvMemes.dispatchEvent(new win.Event('change', { bubbles: true }));
+  await sleep(150);
+  ok('热梗：免费可选', lvMemes.value === 'memes');
+
   ok('引导：Onboarding 模块存在', !!doc.getElementById('onboard-modal'));
 
   ok('课程：只出本课词', win.__courseQueueAllCourse !== false);
@@ -907,7 +930,10 @@ window.onload = async () => {
   lvl.value = 'hsk2';
   lvl.dispatchEvent(new win.Event('change', { bubbles: true }));
   await sleep(100);
-  ok('Pro：HSK2 被拦截', lvl.value === 'hsk1' && !doc.getElementById('pro-modal').hidden);
+  ok('Pro：HSK2 被拦截', (lvl.value === 'hsk1' || lvl.value === 'memes') && !doc.getElementById('pro-modal').hidden);
+  lvl.value = 'hsk1';
+  lvl.dispatchEvent(new win.Event('change', { bubbles: true }));
+  await sleep(100);
   ok('Pro：对比表渲染', doc.querySelectorAll('#pro-compare .pro-row').length === 5);
 
   // 无效 key 拒绝

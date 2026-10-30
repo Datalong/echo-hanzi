@@ -78,6 +78,13 @@
     screenTutor: $('screen-tutor'),
     screenReview: $('screen-review'),
     screenPron: $('screen-pron'),
+    screenChat: $('screen-chat'),
+    chatMessages: $('chat-messages'),
+    chatChips: $('chat-chips'),
+    chatInput: $('chat-input'),
+    chatStatus: $('chat-status'),
+    btnChatSend: $('btn-chat-send'),
+    btnChatClear: $('btn-chat-clear'),
     pronOptions: $('pron-options'),
     pronScore: $('pron-score'),
     pronQuestion: $('pron-question'),
@@ -301,6 +308,7 @@
     q('tab-tutor', t('navTutor'));
     q('tab-review', t('navReview'));
     q('tab-pron', t('navPron'));
+    q('tab-chat', t('navChat'));
     q('tab-write', t('navWrite'));
     q('tab-speak', t('navSpeak'));
     q('tab-listen', t('navListen'));
@@ -548,6 +556,7 @@
     els.screenTutor.hidden = (hub !== 'tutor');
     els.screenReview.hidden = (hub !== 'review');
     els.screenPron.hidden = (hub !== 'pron');
+    els.screenChat.hidden = (hub !== 'chat');
     els.screenSpeak.hidden = (hub !== 'speak');
     els.screenListen.hidden = (hub !== 'listen');
     els.screenRead.hidden = (hub !== 'read');
@@ -566,6 +575,8 @@
       renderReviewScreen();
     } else if (hub === 'pron') {
       renderPronScreen();
+    } else if (hub === 'chat') {
+      renderChatScreen();
     } else if (hub === 'tutor') {
       renderTutorScreen();
     } else if (hub === 'write') {
@@ -1195,6 +1206,160 @@
     }
     if (els.pronNext) els.pronNext.hidden = false;
     updatePronScore();
+  }
+
+  /* ---------------- 💬 聊天打字场 (Chat Arena) ---------------- */
+
+  var CHAT_KEY = 'echo-hanzi:chat:v1';
+  var chatBusy = false;
+  var CHAT_BOT_NAME = '小柯';
+
+  var CHAT_PERSONA = '你现在化名「' + CHAT_BOT_NAME + '」，是学习者的中文笔友。' +
+    '用简单中文（HSK 1-3 词汇）像微信聊天一样回复：每次最多 2 句，口语化，' +
+    '可以自然地使用网络流行语（如 内卷、躺平、绝绝子、真香），偶尔主动提问把话题继续下去。';
+
+  var CHAT_TOPICS = {
+    'milk-tea': '我想点一杯奶茶，三分糖加珍珠，帮我用中文跟店员说。',
+    'directions': '我想问去火车站怎么走，用中文教我说。',
+    'weekend': '聊聊你周末做了什么，也问我。',
+    'memes': '教我一个最近流行的网络热梗，解释意思再举例句。'
+  };
+
+  function chatLoad() {
+    try {
+      var h = JSON.parse(localStorage.getItem(CHAT_KEY) || '[]');
+      return Array.isArray(h) ? h.slice(-30) : [];
+    } catch (err) { return []; }
+  }
+
+  function chatSave(list) {
+    try { localStorage.setItem(CHAT_KEY, JSON.stringify(list.slice(-30))); } catch (err) { /* ignore */ }
+  }
+
+  function chatBubble(role, text) {
+    var row = document.createElement('div');
+    row.className = 'chat-row chat-row-' + role;
+    var bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    bubble.textContent = text;
+    row.appendChild(bubble);
+    return row;
+  }
+
+  function renderChatScreen() {
+    if (!els.chatMessages) return;
+    var history = chatLoad();
+    els.chatMessages.textContent = '';
+    if (!history.length) {
+      els.chatMessages.appendChild(chatBubble('bot',
+        CHAT_BOT_NAME + '：你好！我是你的中文笔友 👋\n用你的输入法打中文回复我，打错也没关系，我会用简单的话回你。\n点下面的标签开始话题吧！'));
+    } else {
+      history.forEach(function (m) {
+        els.chatMessages.appendChild(chatBubble(m.role === 'user' ? 'user' : 'bot', m.text));
+      });
+    }
+    els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+    if (els.chatInput) els.chatInput.placeholder = t('chatPlaceholder');
+    if (els.chatChips) {
+      els.chatChips.querySelectorAll('.tutor-chip').forEach(function (chip) {
+        chip.textContent = t('chatTopic.' + chip.dataset.topic) || chip.dataset.topic;
+      });
+    }
+  }
+
+  function chatAppend(role, text) {
+    var history = chatLoad();
+    history.push({ role: role, text: text, t: Date.now() });
+    chatSave(history);
+    if (els.chatMessages) {
+      els.chatMessages.appendChild(chatBubble(role === 'user' ? 'user' : 'bot', text));
+      els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+    }
+  }
+
+  /** 离线脚本笔友：没有 API Key 也能聊 */
+  function scriptedReply(userText) {
+    var text = userText || '';
+    var pick = function (arr) { return arr[Math.floor(Math.random() * arr.length)]; };
+    if (/你好|hi|hello|嗨/i.test(text)) {
+      return pick(['你好呀！今天过得怎么样？', '嗨！你吃了吗？', '你好！今天想聊什么？']);
+    }
+    if (/奶茶|咖啡|喝/.test(text)) {
+      return pick(['三分糖加珍珠，很会点嘛！我也想喝一杯，真香。', '喝奶茶快乐归快乐，可别天天喝，会上头的！']);
+    }
+    if (/火车站|怎么走|地铁|路/.test(text)) {
+      return '直走五百米，然后左转就到了。记住了吗？再问我一遍试试～';
+    }
+    if (/周末|星期|电影|玩/.test(text)) {
+      return pick(['我周末在家躺着追剧，太躺平了哈哈。你呢？', '我去看电影了，那片子绝绝子！你的周末呢？']);
+    }
+    if (/梗|热梗|流行/.test(text)) {
+      return pick(['教你一个：摆烂，就是不想努力了，躺平得更彻底。例句：这周一到我就摆烂。', '「真香」：先说不想要，后来又爱得不行。例句：我发誓不喝奶茶，结果真香了。']);
+    }
+    if (/谢谢|感谢/.test(text)) {
+      return pick(['不客气！常用中文就是这样一点点会的。', '小事儿！继续聊，我陪你练。']);
+    }
+    if (/再见|拜/.test(text)) {
+      return '再见！明天记得来打卡哦～';
+    }
+    if (text.length <= 2) {
+      return pick(['再多说一句试试？', '然后呢？我听着呢。', '有意思，展开讲讲？']);
+    }
+    return pick([
+      '不错不错，这句话打得很顺！那你觉得' + (text.length > 6 ? text.slice(0, 4) : text) + '怎么样？',
+      '懂了懂了。那你平时喜欢做什么？',
+      '哈哈，你说的很真实。今天工作忙不忙？',
+      '我喜欢这个话题！对了，你学中文多久了？'
+    ]);
+  }
+
+  function chatSend(promptText) {
+    if (chatBusy || !els.chatInput) return;
+    var text = (promptText || els.chatInput.value).trim();
+    if (!text) return;
+    els.chatInput.value = '';
+    chatAppend('user', text);
+
+    // AI 笔友：配置了 Key 且配额内；否则离线脚本笔友
+    var useAI = window.Tutor && window.Tutor.isConfigured() &&
+                (!window.License || window.License.allow('tutorDaily'));
+
+    if (useAI) {
+      if (window.License) window.License.quotaBump('tutorDaily');
+      chatBusy = true;
+      if (els.chatStatus) els.chatStatus.textContent = t('tutorStatusThinking');
+      var row = chatBubble('bot', '');
+      var bubble = row.querySelector('.chat-bubble');
+      els.chatMessages.appendChild(row);
+      els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+      var acc = '';
+      var msgs = chatLoad().slice(0, -1).map(function (m) {
+        return { role: m.role === 'user' ? 'user' : 'assistant', content: m.text };
+      }).concat([{ role: 'user', content: text }]);
+      window.Tutor.chat(msgs, function (delta) {
+        acc += delta;
+        bubble.textContent = acc;
+        els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+      }, CHAT_PERSONA).then(function (full) {
+        var reply = full || t('tutorEmpty');
+        row.remove();
+        chatAppend('bot', reply);
+        if (window.Speech && settings.speech) window.Speech.speak(reply.replace(/[a-zA-Z0-9\s]/g, '').slice(0, 60), 0.84);
+      }).catch(function (err) {
+        row.remove();
+        chatAppend('bot', scriptedReply(text));
+      }).then(function () {
+        chatBusy = false;
+        if (els.chatStatus) els.chatStatus.textContent = t('chatStatusIdle');
+      });
+    } else {
+      chatBusy = true;
+      setTimeout(function () {
+        chatAppend('bot', scriptedReply(text));
+        chatBusy = false;
+        if (els.chatStatus) els.chatStatus.textContent = t('chatStatusIdle');
+      }, 700);
+    }
   }
 
   /* ---------------- 🤖 AI 助教 (Tutor) ---------------- */
@@ -2954,7 +3119,7 @@
       });
     }
     els.level.addEventListener('change', function () {
-      if (els.level.value !== 'hsk1' && !isProUser()) {
+      if (els.level.value !== 'hsk1' && els.level.value !== 'memes' && !isProUser()) {
         flash(t('msgNeedPro'), 'bad');
         els.level.value = settings.level || 'hsk1';
         openProModal();
@@ -3166,6 +3331,32 @@
     }
     if (els.btnReadQuiz) {
       els.btnReadQuiz.addEventListener('click', renderReadQuiz);
+    }
+
+    // 聊天打字场绑定
+    if (els.btnChatSend) {
+      els.btnChatSend.addEventListener('click', function () { chatSend(); });
+    }
+    if (els.chatInput) {
+      els.chatInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          chatSend();
+        }
+      });
+    }
+    if (els.chatChips) {
+      els.chatChips.querySelectorAll('.tutor-chip').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          chatSend(t('chatTopic.' + chip.dataset.topic) || chip.dataset.topic);
+        });
+      });
+    }
+    if (els.btnChatClear) {
+      els.btnChatClear.addEventListener('click', function () {
+        try { localStorage.removeItem(CHAT_KEY); } catch (err) { /* ignore */ }
+        renderChatScreen();
+      });
     }
 
     // 发音听辨绑定

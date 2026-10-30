@@ -33,6 +33,7 @@
       <button class="hub-tab" id="tab-read" type="button" data-hub="read">📖 阅读</button>
       <button class="hub-tab" id="tab-review" type="button" data-hub="review">📋 复习</button>
       <button class="hub-tab" id="tab-pron" type="button" data-hub="pron">🔊 发音</button>
+      <button class="hub-tab" id="tab-chat" type="button" data-hub="chat">💬 聊天</button>
       <button class="hub-tab" id="tab-tutor" type="button" data-hub="tutor">🤖 助教</button>
     </nav>
 
@@ -50,6 +51,7 @@
         <span class="sfield-label">词库</span>
         <select id="sel-level">
           <option value="hsk1">HSK 1</option>
+          <option value="memes">🔥 热梗</option>
           <option value="hsk2">HSK 2 🔒</option>
           <option value="hsk3">HSK 3 🔒</option>
           <option value="all">全部 🔒</option>
@@ -345,6 +347,28 @@
       <div class="pron-options" id="pron-options"></div>
       <div class="pron-feedback" id="pron-feedback" hidden></div>
       <button class="ghost-btn" id="btn-pron-next" type="button" hidden>下一题 (Tab)</button>
+    </div>
+  </section>
+
+  <!-- 💬 聊天打字场 (Chat Arena) -->
+  <section class="screen chat-screen" id="screen-chat" hidden>
+    <div class="speak-header">
+      <span class="runline" id="chat-status">和笔友小柯打字聊天，用你自己的输入法</span>
+      <button class="ghost-btn" id="btn-chat-clear" type="button">新对话</button>
+    </div>
+    <div class="card chat-card">
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="tutor-chips" id="chat-chips">
+        <button class="tutor-chip" type="button" data-topic="milk-tea">点奶茶</button>
+        <button class="tutor-chip" type="button" data-topic="directions">问路</button>
+        <button class="tutor-chip" type="button" data-topic="weekend">聊周末</button>
+        <button class="tutor-chip" type="button" data-topic="memes">学热梗</button>
+      </div>
+      <div class="tutor-input-row">
+        <input class="listen-input tutor-input" id="chat-input" type="text"
+          placeholder="用你的输入法打中文..." autocomplete="off" />
+        <button class="primary-btn" id="btn-chat-send" type="button">发送</button>
+      </div>
     </div>
   </section>
 
