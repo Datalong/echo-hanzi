@@ -2661,3 +2661,78 @@ kbd {
 @media (max-width: 700px) {
   .course-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ---------------- 👋 首访引导 (Onboarding) ---------------- */
+
+.onboard-dialog {
+  max-width: 420px;
+  text-align: center;
+}
+
+.onboard-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.onboard-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s ease;
+}
+
+.onboard-dot.is-on { background: var(--accent); }
+
+.onboard-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  color: var(--text);
+}
+
+.onboard-sub {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.onboard-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.onboard-opt {
+  appearance: none;
+  font: inherit;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg-soft);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.onboard-opt small { color: var(--muted); font-size: 12px; }
+
+.onboard-opt.is-picked {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.onboard-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.onboard-actions .primary-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

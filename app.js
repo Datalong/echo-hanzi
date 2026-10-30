@@ -96,6 +96,10 @@
     btnProActivate: $('btn-pro-activate'),
     btnProDeactivate: $('btn-pro-deactivate'),
     proBuyLink: $('pro-buy-link'),
+    onboardModal: $('onboard-modal'),
+    btnObNext: $('btn-ob-next'),
+    btnObStart: $('btn-ob-start'),
+    btnObSkip: $('btn-ob-skip'),
     reviewList: $('review-list'),
     reviewSummary: $('review-summary'),
     btnReviewStart: $('btn-review-start'),
@@ -634,6 +638,87 @@
         els.homeHeatmap.appendChild(cell);
         cursor.setDate(cursor.getDate() + 1);
       }
+    }
+  }
+
+  /* ---------------- 👋 首访引导 (Onboarding) ---------------- */
+
+  var ONBOARD_KEY = 'echo-hanzi:onboarded:v1';
+  var obStep = 1;
+  var obPick = { lang: null, level: null, goal: null };
+
+  function onboardDone() {
+    try { return !!localStorage.getItem(ONBOARD_KEY); } catch (err) { return true; }
+  }
+
+  function obShow(n) {
+    obStep = n;
+    [1, 2, 3].forEach(function (i) {
+      var el = $('ob-step' + i);
+      if (el) el.hidden = (i !== n);
+      var dot = $('ob-dot' + i);
+      if (dot) dot.classList.toggle('is-on', i <= n);
+    });
+    var ready = (n === 1 && obPick.lang) || (n === 2 && obPick.level) || (n === 3 && obPick.goal);
+    if (els.btnObNext) els.btnObNext.disabled = !ready;
+    if (els.btnObNext) els.btnObNext.hidden = (n === 3);
+    if (els.btnObStart) els.btnObStart.hidden = (n !== 3);
+  }
+
+  function obBindOptions(stepId, attr, key) {
+    var step = $(stepId);
+    if (!step) return;
+    step.querySelectorAll('.onboard-opt').forEach(function (opt) {
+      opt.addEventListener('click', function () {
+        step.querySelectorAll('.onboard-opt').forEach(function (o) { o.classList.remove('is-picked'); });
+        opt.classList.add('is-picked');
+        obPick[key] = opt.dataset[attr];
+        obShow(obStep);
+      });
+    });
+  }
+
+  function initOnboarding() {
+    if (onboardDone()) return;
+    if (!els.onboardModal) return;
+    els.onboardModal.hidden = false;
+    obShow(1);
+
+    obBindOptions('ob-step1', 'lang', 'lang');
+    obBindOptions('ob-step2', 'level', 'level');
+    obBindOptions('ob-step3', 'goal', 'goal');
+
+    if (els.btnObNext) {
+      els.btnObNext.addEventListener('click', function () {
+        if (obStep === 1 && obPick.lang && window.I18n) {
+          window.I18n.setLanguage(obPick.lang);
+          applyTranslations();
+        }
+        obShow(obStep + 1);
+      });
+    }
+    if (els.btnObStart) {
+      els.btnObStart.addEventListener('click', function () {
+        if (obPick.goal) setDailyGoal(parseInt(obPick.goal, 10) || 3);
+        if (obPick.level === 'some' && window.Course) {
+          var db = window.Course.load();
+          db.__all = true;
+          window.Course.save(db);
+        }
+        try { localStorage.setItem(ONBOARD_KEY, '1'); } catch (err) { /* ignore */ }
+        els.onboardModal.hidden = true;
+        if (obPick.level === 'zero' && window.Course) {
+          startCourseLesson(window.Course.LESSONS[0]);
+        } else {
+          renderCourseScreen();
+        }
+      });
+    }
+    if (els.btnObSkip) {
+      els.btnObSkip.addEventListener('click', function () {
+        try { localStorage.setItem(ONBOARD_KEY, '1'); } catch (err) { /* ignore */ }
+        els.onboardModal.hidden = true;
+      });
     }
   }
 
@@ -3443,6 +3528,7 @@
     if (!window.SENTENCE_LISTS) settings.mode = 'word';
     startSession();
     switchHub('course');
+    initOnboarding();
     setTimeout(focusCatcher, 60);
     document.documentElement.setAttribute('data-app-ready', '1');
     registerServiceWorker();

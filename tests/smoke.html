@@ -886,6 +886,11 @@ window.onload = async () => {
   doc.querySelectorAll('#course-grid .course-card')[1].click();
   await sleep(200);
   ok('课程：点卡片进打字', !doc.getElementById('screen-typing').hidden);
+  win.Course.reset && null;
+
+  // ---------- 首访引导 (Onboarding) ----------
+  ok('引导：Onboarding 模块存在', !!doc.getElementById('onboard-modal'));
+
   ok('课程：只出本课词', win.__courseQueueAllCourse !== false);
   win.Course.reset && null;
 
@@ -924,6 +929,44 @@ window.onload = async () => {
   win.Tutor.clearHistory();
   win.Tutor.saveSettings({ apiKey: '' });
   doc.getElementById('pro-modal').hidden = true;
+
+  // ---------- Onboarding 全流程（独立 iframe 模拟首访） ----------
+  try {
+    const f4 = document.createElement('iframe');
+    f4.style.cssText = 'width:900px;height:600px;position:absolute;left:-9999px';
+    document.body.appendChild(f4);
+    await waitReady(f4, '../index.html?ob=' + Date.now());
+    const w4 = f4.contentWindow, d4 = f4.contentDocument;
+    w4.localStorage.removeItem('echo-hanzi:onboarded:v1');
+    w4.localStorage.removeItem('echo-hanzi:course:v1');
+    await waitReady(f4, '../index.html?ob2=' + Date.now());
+    const modal4 = d4.getElementById('onboard-modal');
+    ok('引导：首访弹出', !modal4.hidden);
+    ok('引导：第一步可选语言', d4.querySelectorAll('#ob-step1 .onboard-opt').length === 2 && d4.getElementById('btn-ob-next').disabled);
+    d4.querySelector('#ob-step1 [data-lang="zh-CN"]').click();
+    await sleep(80);
+    ok('引导：选语言后可下一步', !d4.getElementById('btn-ob-next').disabled);
+    d4.getElementById('btn-ob-next').click();
+    await sleep(80);
+    ok('引导：第二步水平选择', !d4.getElementById('ob-step2').hidden);
+    d4.querySelector('#ob-step2 [data-level="zero"]').click();
+    await sleep(80);
+    d4.getElementById('btn-ob-next').click();
+    await sleep(80);
+    ok('引导：第三步每日目标', !d4.getElementById('ob-step3').hidden);
+    d4.querySelector('#ob-step3 [data-goal="3"]').click();
+    await sleep(80);
+    ok('引导：开始按钮出现', !d4.getElementById('btn-ob-start').hidden);
+    d4.getElementById('btn-ob-start').click();
+    await sleep(200);
+    ok('引导：完成落进第 1 课打字', !d4.getElementById('screen-typing').hidden && modal4.hidden);
+    ok('引导：flag 已写入', !!w4.localStorage.getItem('echo-hanzi:onboarded:v1'));
+    ok('引导：零基础未解锁全部课程', !w4.Course.isUnlocked(1));
+    ok('引导：每日目标为 3', w4.localStorage.getItem('echo-hanzi:daily-goal:v1') === '3');
+    f4.remove();
+  } catch (err) {
+    log.push('FAIL 引导流程中断 :: ' + (err && err.message ? err.message : String(err)));
+  }
 
   } catch (err) {
     log.push('FAIL 用例中断 :: ' + (err && err.message ? err.message : String(err)));

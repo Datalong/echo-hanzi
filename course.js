@@ -58,8 +58,9 @@
 
   /** 第 index 课（0 起）是否解锁 */
   function isUnlocked(index) {
-    if (index === 0) return true;
     var db = load();
+    if (db.__all) return true; // 首访引导「学过一点」全解锁
+    if (index === 0) return true;
     var prev = db[LESSONS[index - 1].id];
     return !!(prev && prev.stars > 0);
   }

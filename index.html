@@ -625,6 +625,46 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="onboard-modal" hidden>
+  <div class="share-dialog onboard-dialog">
+    <div class="onboard-dots"><span class="onboard-dot is-on" id="ob-dot1"></span><span class="onboard-dot" id="ob-dot2"></span><span class="onboard-dot" id="ob-dot3"></span></div>
+
+    <div class="onboard-step" id="ob-step1">
+      <h3 class="onboard-title">欢迎来到 Echo Hanzi</h3>
+      <p class="onboard-sub">Welcome! 先花 20 秒设置一下 / Let's set things up</p>
+      <div class="onboard-options">
+        <button class="onboard-opt" type="button" data-lang="zh-CN">🇨🇳 简体中文</button>
+        <button class="onboard-opt" type="button" data-lang="en">🇺🇸 English</button>
+      </div>
+    </div>
+
+    <div class="onboard-step" id="ob-step2" hidden>
+      <h3 class="onboard-title">你的中文水平？</h3>
+      <p class="onboard-sub">What's your level? / 你学过中文吗？</p>
+      <div class="onboard-options">
+        <button class="onboard-opt" type="button" data-level="zero"><b>零基础</b><br><small>Brand new to Chinese — start from Lesson 1</small></button>
+        <button class="onboard-opt" type="button" data-level="some"><b>学过一点</b><br><small>I know some — unlock all lessons</small></button>
+      </div>
+    </div>
+
+    <div class="onboard-step" id="ob-step3" hidden>
+      <h3 class="onboard-title">每天练多少？</h3>
+      <p class="onboard-sub">Set a daily goal / 每日目标</p>
+      <div class="onboard-options">
+        <button class="onboard-opt" type="button" data-goal="1">轻度<br><small>1 轮 / day</small></button>
+        <button class="onboard-opt" type="button" data-goal="3"><b>标准</b><br><small>3 轮 / day</small></button>
+        <button class="onboard-opt" type="button" data-goal="5">强度<br><small>5 轮 / day</small></button>
+      </div>
+    </div>
+
+    <div class="onboard-actions">
+      <button class="ghost-btn" id="btn-ob-skip" type="button">跳过 Skip →</button>
+      <button class="primary-btn" id="btn-ob-next" type="button" disabled>下一步</button>
+      <button class="primary-btn" id="btn-ob-start" type="button" hidden>开始第 1 课 →</button>
+    </div>
+  </div>
+</div>
+
 <div class="focus-hint" id="focus-hint" hidden>点一下页面开始输入</div>
 </div>
 
