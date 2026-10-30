@@ -14,6 +14,7 @@ var PRECACHE_URLS = [
   './collection.js',
   './license.js',
   './course.js',
+  './achievements.js',
   './tutor.js',
   './pron.js',
   './stories.js',

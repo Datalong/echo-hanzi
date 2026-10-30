@@ -352,7 +352,67 @@
     ['这本书非常好看。', 'zhè běn shū fēicháng hǎokàn。', 'This book is very good.', 'hsk2'],
     ['他跑得比我快。', 'tā pǎo de bǐ wǒ kuài。', 'He runs faster than me.', 'hsk2'],
     ['天气真冷，我们回家吧。', 'tiānqì zhēn lěng，wǒmen huí jiā ba。', "It's really cold, let's go home.", 'hsk2'],
-    ['你什么时候回家？', 'nǐ shénme shíhou huí jiā？', 'When are you going home?', 'hsk2']
+    ['你什么时候回家？', 'nǐ shénme shíhou huí jiā？', 'When are you going home?', 'hsk2'],
+    ['我爱你。', 'wǒ ài nǐ。', 'I love you.', 'hsk1'],
+    ['他是我的好朋友。', 'tā shì wǒ de hǎo péngyou。', 'He is my good friend.', 'hsk1'],
+    ['我会说汉语。', 'wǒ huì shuō Hànyǔ。', 'I can speak Chinese.', 'hsk1'],
+    ['我的学校很大。', 'wǒ de xuéxiào hěn dà。', 'My school is very big.', 'hsk1'],
+    ['今天是星期一。', 'jīntiān shì xīngqīyī。', 'Today is Monday.', 'hsk1'],
+    ['我喜欢你。', 'wǒ xǐhuan nǐ。', 'I like you.', 'hsk1'],
+    ['我想看书。', 'wǒ xiǎng kàn shū。', 'I want to read a book.', 'hsk1'],
+    ['电脑在桌子上。', 'diànnǎo zài zhuōzi shàng。', 'The computer is on the desk.', 'hsk1'],
+    ['请坐。', 'qǐng zuò。', 'Please sit down.', 'hsk1'],
+    ['你今年多大？', 'nǐ jīnnián duō dà？', 'How old are you this year?', 'hsk1'],
+    ['我去看医生。', 'wǒ qù kàn yīshēng。', 'I am going to see the doctor.', 'hsk1'],
+    ['我买苹果。', 'wǒ mǎi píngguǒ。', 'I buy apples.', 'hsk1'],
+    ['我们都爱中文。', 'wǒmen dōu ài Zhōngwén。', 'We all love Chinese.', 'hsk1'],
+    ['他不在家。', 'tā bú zài jiā。', 'He is not at home.', 'hsk1'],
+    ['请再说一次。', 'qǐng zài shuō yī cì。', 'Please say it once more.', 'hsk1'],
+    ['我上午有课。', 'wǒ shàngwǔ yǒu kè。', 'I have class in the morning.', 'hsk1'],
+    ['下午我打篮球。', 'xiàwǔ wǒ dǎ lánqiú。', 'I play basketball in the afternoon.', 'hsk1'],
+    ['她是我的中国朋友。', 'tā shì wǒ de Zhōngguó péngyou。', 'She is my Chinese friend.', 'hsk1'],
+    ['猫在椅子下面。', 'māo zài yǐzi xiàmiàn。', 'The cat is under the chair.', 'hsk1'],
+    ['再见，明天见！', 'zàijiàn，míngtiān jiàn！', 'Goodbye, see you tomorrow!', 'hsk1'],
+    ['你学中文多长时间了？', 'nǐ xué Zhōngwén duō cháng shíjiān le？', 'How long have you studied Chinese?', 'hsk2'],
+    ['虽然很难，但是我想学。', 'suīrán hěn nán，dànshì wǒ xiǎng xué。', 'Although it is hard, I want to learn.', 'hsk2'],
+    ['这件衣服多少钱？', 'zhè jiàn yīfu duōshao qián？', 'How much is this piece of clothing?', 'hsk2'],
+    ['我越来越忙。', 'wǒ yuèláiyuè máng。', 'I am getting busier and busier.', 'hsk2'],
+    ['大家一起唱歌吧。', 'dàjiā yīqǐ chàng gē ba。', 'Let us sing together.', 'hsk2'],
+    ['我觉得这部电影非常好。', 'wǒ juéde zhè bù diànyǐng fēicháng hǎo。', 'I think this movie is very good.', 'hsk2'],
+    ['你想喝点什么？', 'nǐ xiǎng hē diǎn shénme？', 'What would you like to drink?', 'hsk2'],
+    ['题目有点难。', 'tímù yǒudiǎn nán。', 'The questions are a bit hard.', 'hsk2'],
+    ['明天可能会下雨。', 'míngtiān kěnéng huì xià yǔ。', 'It might rain tomorrow.', 'hsk2'],
+    ['我差点忘了。', 'wǒ chàdiǎn wàng le。', 'I almost forgot.', 'hsk2'],
+    ['你要几杯咖啡？', 'nǐ yào jǐ bēi kāfēi？', 'How many cups of coffee do you want?', 'hsk2'],
+    ['他比我跑得快。', 'tā bǐ wǒ pǎo de kuài。', 'He runs faster than me.', 'hsk2'],
+    ['我们一边喝咖啡一边聊天。', 'wǒmen yībiān hē kāfēi yībiān liáotiān。', 'We chat while drinking coffee.', 'hsk2'],
+    ['我打算今年去中国。', 'wǒ dǎsuàn jīnnián qù Zhōngguó。', 'I plan to go to China this year.', 'hsk2'],
+    ['这个字怎么读？', 'zhège zì zěnme dú？', 'How do you read this character?', 'hsk2'],
+    ['房间里太热了。', 'fángjiān li tài rè le。', 'It is too hot in the room.', 'hsk2'],
+    ['你需要帮忙吗？', 'nǐ xūyào bāngmáng ma？', 'Do you need help?', 'hsk2'],
+    ['我从来没去过北京。', 'wǒ cónglái méi qùguo Běijīng。', 'I have never been to Beijing.', 'hsk2'],
+    ['请把窗户打开。', 'qǐng bǎ chuānghu dǎkāi。', 'Please open the window.', 'hsk2'],
+    ['慢慢来，别着急。', 'mànmàn lái，bié zháojí。', 'Take your time, do not worry.', 'hsk2'],
+    ['我打算暑假去北京旅游。', 'wǒ dǎsuàn shǔjià qù Běijīng lǚyóu。', 'I plan to travel to Beijing this summer.', 'hsk3'],
+    ['他的中文水平提高了很多。', 'tā de Zhōngwén shuǐpíng tígāo le hěn duō。', 'His Chinese level has improved a lot.', 'hsk3'],
+    ['无论多忙，我都要坚持练习。', 'wúlùn duō máng，wǒ dōu yào jiānchí liànxí。', 'No matter how busy, I will keep practicing.', 'hsk3'],
+    ['这道题我一下子做不出来。', 'zhè dào tí wǒ yīxiàzi zuò bu chūlái。', 'I cannot solve this question right away.', 'hsk3'],
+    ['环境污染越来越严重。', 'huánjìng wūrǎn yuèláiyuè yánzhòng。', 'Environmental pollution is getting worse.', 'hsk3'],
+    ['你想不想尝尝我做的菜？', 'nǐ xiǎng bu xiǎng chángchang wǒ zuò de cài？', 'Would you like to taste my cooking?', 'hsk3'],
+    ['他不但会说汉语，还会写汉字。', 'tā búdàn huì shuō Hànyǔ，hái huì xiě Hànzì。', 'He can speak Chinese and even write characters.', 'hsk3'],
+    ['我把手机忘在出租车上了。', 'wǒ bǎ shǒujī wàng zài chūzūchē shàng le。', 'I left my phone in the taxi.', 'hsk3'],
+    ['只要坚持下去，就一定会成功。', 'zhǐyào jiānchí xiàqù，jiù yīdìng huì chénggōng。', 'Keep going and you will succeed.', 'hsk3'],
+    ['他好像不太高兴。', 'tā hǎoxiàng bú tài gāoxìng。', 'He seems unhappy.', 'hsk3'],
+    ['这个电影比我想象的好看。', 'zhège diànyǐng bǐ wǒ xiǎngxiàng de hǎokàn。', 'This movie is better than I imagined.', 'hsk3'],
+    ['我确定明天会下雨。', 'wǒ quèdìng míngtiān huì xià yǔ。', 'I am sure it will rain tomorrow.', 'hsk3'],
+    ['由于天气不好，飞机晚点了。', 'yóuyú tiānqì bù hǎo，fēijī wǎndiǎn le。', 'The flight was delayed due to bad weather.', 'hsk3'],
+    ['我的房间收拾得干干净净。', 'wǒ de fángjiān shōushi de gāngānjìngjìng。', 'My room is tidied spotless.', 'hsk3'],
+    ['这家餐馆的菜味道不错。', 'zhè jiā cānguǎn de cài wèidào búcuò。', 'The food at this restaurant tastes good.', 'hsk3'],
+    ['他一边打工一边上学。', 'tā yībiān dǎgōng yībiān shàngxué。', 'He works part-time while studying.', 'hsk3'],
+    ['你理解错我的意思了。', 'nǐ lǐjiě cuò wǒ de yìsi le。', 'You misunderstood me.', 'hsk3'],
+    ['我最近对历史产生了兴趣。', 'wǒ zuìjìn duì lìshǐ chǎnshēng le xìngqù。', 'I have recently grown interested in history.', 'hsk3'],
+    ['别灰心，下次一定会更好。', 'bié huīxīn，xià cì yīdìng huì gèng hǎo。', 'Do not lose heart; next time will be better.', 'hsk3'],
+    ['老师建议我们多听多读。', 'lǎoshī jiànyì wǒmen duō tīng duō dú。', 'The teacher suggested listening and reading more.', 'hsk3'],
   ];
 
   var HSK3 = [
@@ -892,9 +952,10 @@
 
   var SENTENCE_LISTS = {
     hsk1: toSentences(SENTENCES.filter(function (r) { return r[3] === 'hsk1'; }), 'HSK 1'),
-    hsk2: toSentences(SENTENCES.filter(function (r) { return r[3] === 'hsk2'; }), 'HSK 2')
+    hsk2: toSentences(SENTENCES.filter(function (r) { return r[3] === 'hsk2'; }), 'HSK 2'),
+    hsk3: toSentences(SENTENCES.filter(function (r) { return r[3] === 'hsk3'; }), 'HSK 3')
   };
-  SENTENCE_LISTS.all = SENTENCE_LISTS.hsk1.concat(SENTENCE_LISTS.hsk2);
+  SENTENCE_LISTS.all = SENTENCE_LISTS.hsk1.concat(SENTENCE_LISTS.hsk2).concat(SENTENCE_LISTS.hsk3);
 
   global.WORD_LISTS = LISTS;
   global.SENTENCE_LISTS = SENTENCE_LISTS;

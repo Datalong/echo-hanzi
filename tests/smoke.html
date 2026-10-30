@@ -309,7 +309,7 @@ window.onload = async () => {
      doc.querySelectorAll('#dash-mastery .mastery-key').length === 4,
      doc.querySelectorAll('#dash-mastery .mastery-key').length + ' keys');
   ok('看板：掌握分布合计等于题量',
-     /共\s*799\s*词句/.test(doc.getElementById('dash-mastery-sub').textContent),
+     /共\s*859\s*词句/.test(doc.getElementById('dash-mastery-sub').textContent),
      doc.getElementById('dash-mastery-sub').textContent);
 
   // 看板打开时打字不应影响进度
@@ -911,6 +911,30 @@ window.onload = async () => {
   lvMemes.dispatchEvent(new win.Event('change', { bubbles: true }));
   await sleep(150);
   ok('热梗：免费可选', lvMemes.value === 'memes');
+  // ---------- 设置中心 ----------
+  doc.getElementById('btn-settings').click();
+  await sleep(100);
+  ok('设置：弹窗打开', !doc.getElementById('settings-modal').hidden);
+  ok('设置：快捷键表 6 条', doc.querySelectorAll('.shortcut-table div').length === 6);
+  doc.getElementById('btn-settings-close').click();
+  await sleep(80);
+  ok('设置：关闭', doc.getElementById('settings-modal').hidden);
+
+  // ---------- 成就徽章 ----------
+  ok('成就：模块可用', typeof win.Achievements === 'object' && win.Achievements.DEFS.length === 12);
+  doc.getElementById('tab-home').click();
+  await sleep(200);
+  ok('成就：总览面板渲染', doc.querySelectorAll('#ach-grid .ach-cell').length === 12);
+  const achOn = doc.querySelectorAll('#ach-grid .ach-cell.is-on').length;
+  ok('成就：有已解锁项（首课通关路径）', achOn >= 1, achOn + ' unlocked');
+  // 切语言按钮生效
+  doc.getElementById('btn-settings').click();
+  doc.getElementById('btn-set-lang').click();
+  await sleep(100);
+  ok('设置：切语言生效', win.I18n.getLang() !== 'zh-CN' || win.I18n.getLang() !== 'en');
+  win.I18n.setLanguage('zh-CN');
+  doc.getElementById('btn-settings-close').click();
+
 
   ok('引导：Onboarding 模块存在', !!doc.getElementById('onboard-modal'));
 

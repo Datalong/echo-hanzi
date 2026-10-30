@@ -107,6 +107,16 @@
     btnObNext: $('btn-ob-next'),
     btnObStart: $('btn-ob-start'),
     btnObSkip: $('btn-ob-skip'),
+    settingsModal: $('settings-modal'),
+    btnSettings: $('btn-settings'),
+    btnSettingsClose: $('btn-settings-close'),
+    btnSetLang: $('btn-set-lang'),
+    btnSetTheme: $('btn-set-theme'),
+    btnSetExport: $('btn-set-export'),
+    btnSetClear: $('btn-set-clear'),
+    btnSetPro: $('btn-set-pro'),
+    achGrid: $('ach-grid'),
+    achSub: $('ach-sub'),
     reviewList: $('review-list'),
     reviewSummary: $('review-summary'),
     btnReviewStart: $('btn-review-start'),
@@ -590,6 +600,69 @@
     }
   }
 
+  /* ---------------- ⚙️ 设置中心 ---------------- */
+
+  function openSettings() {
+    if (els.settingsModal) els.settingsModal.hidden = false;
+  }
+
+  function closeSettings() {
+    if (els.settingsModal) els.settingsModal.hidden = true;
+  }
+
+  function exportAllData() {
+    var dump = { exportedAt: new Date().toISOString(), app: 'echo-hanzi' };
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k.indexOf('echo-hanzi:') === 0) dump[k] = localStorage.getItem(k);
+      }
+    } catch (err) { /* ignore */ }
+    var blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'echo-hanzi-data-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 500);
+  }
+
+  function clearAllData() {
+    if (!window.confirm('确定清空全部学习数据？此操作不可恢复 / Clear ALL data?')) return;
+    var keys = [];
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k.indexOf('echo-hanzi:') === 0) keys.push(k);
+      }
+      keys.forEach(function (k) { localStorage.removeItem(k); });
+    } catch (err) { /* ignore */ }
+    location.reload();
+  }
+
+  /* ---------------- 🏆 成就徽章 ---------------- */
+
+  function refreshAchievements() {
+    if (!window.Achievements || !els.achGrid) return;
+    var newly = window.Achievements.checkAll({ streak: calcStreak() });
+    var db = window.Achievements.load();
+    els.achGrid.textContent = '';
+    window.Achievements.DEFS.forEach(function (d) {
+      var unlocked = !!db[d.id];
+      var cell = document.createElement('div');
+      cell.className = 'ach-cell' + (unlocked ? ' is-on' : '');
+      cell.title = (unlocked ? '' : '🔒 ') + d.desc + ' / ' + d.en;
+      cell.appendChild(span('ach-ico', unlocked ? d.icon : '🔒'));
+      cell.appendChild(span('ach-name', unlocked ? d.name : '？？？'));
+      els.achGrid.appendChild(cell);
+    });
+    if (els.achSub) els.achSub.textContent = Object.keys(db).length + ' / ' + window.Achievements.DEFS.length;
+    // 新解锁提醒
+    if (newly.length) {
+      var def = window.Achievements.DEFS.filter(function (d) { return d.id === newly[newly.length - 1]; })[0];
+      if (def) flash('🏆 ' + t('achUnlocked') + ' ' + def.icon + ' ' + def.name, 'good');
+    }
+  }
+
   /* ---------------- 📅 每日打卡 (Learning Today) ---------------- */
 
   var GOAL_KEY = 'echo-hanzi:daily-goal:v1';
@@ -820,6 +893,7 @@
 
     var sum = window.Stats ? window.Stats.summary(statsDb) : { sessions: 0, avgCpm: 0, avgAcc: 0 };
     renderTodayPanel();
+    refreshAchievements();
 
     // 待复习数：全词库 + 句库 + 自定义
     var pool = (window.WORD_LISTS.all || []).slice();
@@ -3035,6 +3109,7 @@
         window.Course.complete(state.courseLessonId, stars);
         flash(t('courseDone').replace('{stars}', stars), 'good');
       }
+      if (window.Achievements) refreshAchievements();
       state.courseLessonId = null;
       courseLesson = null;
     }
@@ -3331,6 +3406,38 @@
     }
     if (els.btnReadQuiz) {
       els.btnReadQuiz.addEventListener('click', renderReadQuiz);
+    }
+
+    // 设置中心绑定
+    if (els.btnSettings) els.btnSettings.addEventListener('click', openSettings);
+    if (els.btnSettingsClose) els.btnSettingsClose.addEventListener('click', closeSettings);
+    if (els.settingsModal) {
+      els.settingsModal.addEventListener('click', function (e) {
+        if (e.target === els.settingsModal) closeSettings();
+      });
+    }
+    if (els.btnSetLang) {
+      els.btnSetLang.addEventListener('click', function () {
+        if (window.I18n) {
+          window.I18n.toggleLanguage();
+          applyTranslations();
+          renderCourseScreen();
+          if (state.currentHub === 'home') renderHomeScreen();
+        }
+      });
+    }
+    if (els.btnSetTheme) {
+      els.btnSetTheme.addEventListener('click', function () {
+        if (els.tgTheme) els.tgTheme.click();
+      });
+    }
+    if (els.btnSetExport) els.btnSetExport.addEventListener('click', exportAllData);
+    if (els.btnSetClear) els.btnSetClear.addEventListener('click', clearAllData);
+    if (els.btnSetPro) {
+      els.btnSetPro.addEventListener('click', function () {
+        closeSettings();
+        openProModal();
+      });
     }
 
     // 聊天打字场绑定
@@ -3633,6 +3740,13 @@
         if (e.key === 'Escape') {
           e.preventDefault();
           closeProModal();
+        }
+        return;
+      }
+      if (els.settingsModal && !els.settingsModal.hidden) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeSettings();
         }
         return;
       }
