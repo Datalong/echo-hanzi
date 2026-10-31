@@ -1,5 +1,5 @@
 /* sw.js — Service Worker 离线缓存 */
-var CACHE_NAME = 'echo-hanzi-v1';
+var CACHE_NAME = 'echo-hanzi-v2';
 var PRECACHE_URLS = [
   './',
   './index.html',
@@ -19,7 +19,6 @@ var PRECACHE_URLS = [
   './tutor.js',
   './pron.js',
   './stories.js',
-  './strokes.js',
   './data.js',
   './audio.js',
   './srs.js',

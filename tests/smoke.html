@@ -43,7 +43,7 @@ async function waitReady(frame, url) {
       const w = frame.contentWindow;
       if (d.documentElement.getAttribute('data-app-ready') === '1' &&
           d.querySelector('#pinyin .ch') &&
-          w && w.Srs && w.Stats && w.Strokes && w.Ime && w.Stories && w.Dict && w.I18n && w.Share && w.SpeechRec && w.Custom) {
+          w && w.Srs && w.Stats && w.Ime && w.Stories && w.Dict && w.I18n && w.Share && w.SpeechRec && w.Custom && w.Course) {
         return d;
       }
       await sleep(20);
@@ -400,43 +400,6 @@ window.onload = async () => {
     ok('专项：题目出现声调位', d3.querySelectorAll('#pinyin .ch.is-tone').length > 0,
        d3.querySelectorAll('#pinyin .ch.is-tone').length + ' digits');
   }
-
-  // ---------- 汉字笔顺动画 ----------
-  ok('笔顺：模块可用', typeof win.Strokes === 'object' && typeof win.Strokes.getStrokes === 'function');
-  const demoStrokes = win.Strokes.getStrokes('中');
-  ok('笔顺：获取笔画路径正常', Array.isArray(demoStrokes) && demoStrokes.length === 4, '中 = ' + demoStrokes.length + ' 画');
-
-  // 点击汉字打开笔顺浮层
-  doc.getElementById('hanzi').click();
-  await sleep(200);
-  ok('笔顺：点击汉字打开浮层', !doc.getElementById('stroke-modal').hidden);
-  ok('笔顺：米字格背景渲染', !!doc.querySelector('.mige-bg'));
-  ok('笔顺：动态笔画生成', doc.querySelectorAll('#stroke-canvas path').length > 0,
-     doc.querySelectorAll('#stroke-canvas path').length + ' 笔画 paths');
-
-  // 测试单步按钮
-  doc.getElementById('btn-stroke-next').click();
-  await sleep(100);
-  ok('笔顺：下一步步进正常', !!doc.querySelector('#stroke-canvas .stroke-path.is-active'));
-
-  // 浮层打开时键盘输入被隔离
-  const currentPosVal = doc.getElementById('run-pos').textContent;
-  typeChars(win, 'abc');
-  await sleep(50);
-  ok('笔顺：浮层打开时打字输入被隔离', doc.getElementById('run-pos').textContent === currentPosVal);
-
-  // Esc 键关闭浮层
-  doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  await sleep(150);
-  ok('笔顺：按 Esc 关闭浮层', doc.getElementById('stroke-modal').hidden);
-
-  // 点击卡片右上角笔顺按钮
-  doc.getElementById('btn-show-stroke').click();
-  await sleep(150);
-  ok('笔顺：点击卡片笔顺按钮唤起', !doc.getElementById('stroke-modal').hidden);
-  doc.getElementById('btn-stroke-close').click();
-  await sleep(150);
-  ok('笔顺：点击关闭按钮关闭', doc.getElementById('stroke-modal').hidden);
 
   // ---------- 真实中文输入法 (IME 模式) ----------
   ok('输入法：Ime 模块可用', typeof win.Ime === 'object' && typeof win.Ime.queryCandidates === 'function');
@@ -960,7 +923,7 @@ window.onload = async () => {
   doc.getElementById('btn-settings').click();
   await sleep(100);
   ok('设置：弹窗打开', !doc.getElementById('settings-modal').hidden);
-  ok('设置：快捷键表 6 条', doc.querySelectorAll('.shortcut-table div').length === 6);
+  ok('设置：快捷键表 5 条', doc.querySelectorAll('.shortcut-table div').length === 5);
   doc.getElementById('btn-settings-close').click();
   await sleep(80);
   ok('设置：关闭', doc.getElementById('settings-modal').hidden);
@@ -1032,15 +995,20 @@ window.onload = async () => {
     document.body.appendChild(f4);
     await waitReady(f4, '../index.html?ob=' + Date.now());
     const w4 = f4.contentWindow, d4 = f4.contentDocument;
+    w4.addEventListener('error', ev => { log.push('DEBUG ob-error :: ' + ev.message); });
     w4.localStorage.removeItem('echo-hanzi:onboarded:v1');
     w4.localStorage.removeItem('echo-hanzi:course:v1');
     await waitReady(f4, '../index.html?ob2=' + Date.now());
     const modal4 = d4.getElementById('onboard-modal');
     ok('引导：首访弹出', !modal4.hidden);
     ok('引导：第一步可选语言', d4.querySelectorAll('#ob-step1 .onboard-opt').length === 2 && d4.getElementById('btn-ob-next').disabled);
-    d4.querySelector('#ob-step1 [data-lang="zh-CN"]').click();
-    await sleep(80);
-    ok('引导：选语言后可下一步', !d4.getElementById('btn-ob-next').disabled);
+    const obLangBtn = d4.querySelector('#ob-step1 [data-lang="zh-CN"]');
+    ok('引导：语言按钮存在', !!obLangBtn);
+    obLangBtn.click();
+    await sleep(120);
+    const obNext = d4.getElementById('btn-ob-next');
+    ok('引导：选语言后可下一步', !obNext.disabled, 'disabled=' + obNext.disabled + ' picked=' + d4.querySelector('#ob-step1 .onboard-opt.is-picked'));
+    if (obNext.disabled) { log.push('FAIL 用例中断 :: onboarding stop'); throw new Error('onboarding stop'); }
     d4.getElementById('btn-ob-next').click();
     await sleep(80);
     ok('引导：第二步水平选择', !d4.getElementById('ob-step2').hidden);

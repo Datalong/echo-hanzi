@@ -47,7 +47,6 @@
     dtBtnSpeak: $('dt-btn-speak'),
     dtBtnFav: $('dt-btn-fav'),
     dtNote: $('dt-note'),
-    dtBtnStroke: $('dt-btn-stroke'),
     tones: $('tg-tones'),
     ime: $('tg-ime'),
     imePopup: $('ime-popup'),
@@ -223,16 +222,6 @@
     btnImportSave: $('btn-import-save'),
     btnImportDelete: $('btn-import-delete'),
     importList: $('import-list'),
-    strokeModal: $('stroke-modal'),
-    strokeChar: $('stroke-char'),
-    strokeInfo: $('stroke-info'),
-    strokeCanvas: $('stroke-canvas'),
-    btnStrokeClose: $('btn-stroke-close'),
-    btnStrokeReplay: $('btn-stroke-replay'),
-    btnStrokePrev: $('btn-stroke-prev'),
-    btnStrokeNext: $('btn-stroke-next'),
-    btnStrokePlay: $('btn-stroke-play'),
-    btnShowStroke: $('btn-show-stroke'),
     card: $('card'),
     hanzi: $('hanzi'),
     pinyin: $('pinyin'),
@@ -284,10 +273,6 @@
     syllables: [],      // 本题的音节（含是否出错），用于统计
     statsOpen: false,
     drill: null,        // 当前专项：{ kind, key, label }
-    strokeOpen: false,
-    strokeIndex: 0,
-    strokePaths: [],
-    strokeTimer: null,
     imeBufferText: '',
     imePage: 0,
     imeList: [],
@@ -2052,92 +2037,6 @@
     return item.hanzi.charAt(0) || '文';
   }
 
-  function openStrokeModal(charToDemo) {
-    if (!window.Strokes || !els.strokeModal) return;
-    var ch = charToDemo || getCurrentChar();
-    state.strokeOpen = true;
-    state.strokeIndex = 0;
-    if (state.strokeTimer) clearInterval(state.strokeTimer);
-
-    els.strokeChar.textContent = ch;
-    var paths = window.Strokes.getStrokes(ch);
-    state.strokePaths = paths;
-
-    els.strokeInfo.textContent = '共 ' + paths.length + ' 画';
-    renderStrokeCanvas();
-
-    els.strokeModal.hidden = false;
-    if (document.activeElement === els.catcher) els.catcher.blur();
-
-    // 默认打开立即自动演示一遍
-    playStrokeAnimation();
-  }
-
-  function closeStrokeModal() {
-    state.strokeOpen = false;
-    if (state.strokeTimer) { clearInterval(state.strokeTimer); state.strokeTimer = null; }
-    if (els.strokeModal) els.strokeModal.hidden = true;
-    if (!state.statsOpen && !state.finished) {
-      focusCatcher();
-    }
-  }
-
-  function renderStrokeCanvas() {
-    if (!els.strokeCanvas) return;
-    els.strokeCanvas.textContent = '';
-    var paths = state.strokePaths;
-    for (var i = 0; i < paths.length; i++) {
-      var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      p.setAttribute('d', paths[i]);
-      var cls = 'stroke-path';
-      if (i < state.strokeIndex) cls += ' is-written';
-      if (i === state.strokeIndex) cls += ' is-active';
-      p.setAttribute('class', cls);
-      els.strokeCanvas.appendChild(p);
-    }
-    var current = Math.min(paths.length, state.strokeIndex + 1);
-    els.strokeInfo.textContent = current + ' / ' + paths.length + ' 画';
-  }
-
-  function playStrokeAnimation() {
-    if (state.strokeTimer) clearInterval(state.strokeTimer);
-    state.strokeIndex = 0;
-    renderStrokeCanvas();
-    if (settings.sound) window.Sound.click();
-
-    state.strokeTimer = setInterval(function () {
-      if (!state.strokeOpen) {
-        clearInterval(state.strokeTimer);
-        return;
-      }
-      state.strokeIndex++;
-      if (state.strokeIndex >= state.strokePaths.length) {
-        clearInterval(state.strokeTimer);
-        state.strokeTimer = null;
-        // 演示完成稍微强调全部
-        setTimeout(function () {
-          if (!state.strokeOpen) return;
-          state.strokeIndex = state.strokePaths.length;
-          renderStrokeCanvas();
-          if (settings.sound) window.Sound.success();
-        }, 150);
-        return;
-      }
-      renderStrokeCanvas();
-      if (settings.sound) window.Sound.click();
-    }, 450);
-  }
-
-  function strokeStep(delta) {
-    if (state.strokeTimer) { clearInterval(state.strokeTimer); state.strokeTimer = null; }
-    var next = state.strokeIndex + delta;
-    if (next < 0) next = 0;
-    if (next >= state.strokePaths.length) next = state.strokePaths.length - 1;
-    state.strokeIndex = next;
-    renderStrokeCanvas();
-    if (settings.sound) window.Sound.click();
-  }
-
   /* ---------------- 弱点专项 ---------------- */
 
   function syllableFacts(syl) {
@@ -3367,24 +3266,6 @@
     }
 
 
-    if (els.btnStrokeClose) els.btnStrokeClose.addEventListener('click', closeStrokeModal);
-    if (els.btnStrokeReplay) els.btnStrokeReplay.addEventListener('click', playStrokeAnimation);
-    if (els.btnStrokePlay) els.btnStrokePlay.addEventListener('click', playStrokeAnimation);
-    if (els.btnStrokePrev) els.btnStrokePrev.addEventListener('click', function () { strokeStep(-1); });
-    if (els.btnStrokeNext) els.btnStrokeNext.addEventListener('click', function () { strokeStep(1); });
-    if (els.strokeModal) {
-      els.strokeModal.addEventListener('click', function (e) {
-        if (e.target === els.strokeModal) closeStrokeModal();
-      });
-    }
-
-    // 点击大汉字打开笔顺浮层
-    if (els.hanzi) {
-      els.hanzi.addEventListener('click', function () {
-        openStrokeModal(els.hanzi.textContent.trim());
-      });
-    }
-
     // 监听高保真语音发音状态，触发声波微动效
     if (window.Speech && window.Speech.setOnSpeakingChange) {
       window.Speech.setOnSpeakingChange(function (isSpeaking) {
@@ -3396,16 +3277,6 @@
         if (window.Speech) window.Speech.replay();
       });
     }
-
-    // 句模式下点击单个字打开笔顺
-    if (els.sentence) {
-      els.sentence.addEventListener('click', function (e) {
-        var hzEl = e.target.closest('.u-hz');
-        if (hzEl) openStrokeModal(hzEl.textContent.trim());
-      });
-    }
-
-    if (els.btnShowStroke) els.btnShowStroke.addEventListener('click', function () { openStrokeModal(); });
 
     if (els.dtNote) {
       els.dtNote.addEventListener('change', function () {
@@ -3424,13 +3295,6 @@
     if (els.dtBtnSpeak) {
       els.dtBtnSpeak.addEventListener('click', function () {
         if (state.dictChar) speak(state.dictChar);
-      });
-    }
-    if (els.dtBtnStroke) {
-      els.dtBtnStroke.addEventListener('click', function () {
-        var ch = state.dictChar;
-        hideDictTooltip();
-        openStrokeModal(ch);
       });
     }
     if (els.dictTooltip) {
@@ -3919,23 +3783,11 @@
         }
         return;
       }
-      if (state.strokeOpen) {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          closeStrokeModal();
-        }
-        return;
-      }
       if (state.statsOpen) {
         if (e.key === 'Escape' || e.key === 'd' || e.key === 'D') {
           e.preventDefault();
           closeDashboard();
         }
-        return;
-      }
-      if ((e.key === 's' || e.key === 'S') && (e.altKey || e.metaKey || document.activeElement !== els.catcher)) {
-        e.preventDefault();
-        openStrokeModal();
         return;
       }
       if ((e.key === 'r' || e.key === 'R') && (e.altKey || e.metaKey || document.activeElement !== els.catcher)) {
